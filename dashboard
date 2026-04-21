@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Resell Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:#F5F6FA; --white:#FFFFFF; --navy:#1E2A4A;
+    --blue:#4F8EF7; --purp:#7C5CFC; --teal:#3EC9CF;
+    --org:#FF7B54; --grn:#47C98F; --pink:#F76B8A; --vint:#09B1AA;
+    --grey1:#F0F2F8; --grey2:#E0E4F0; --greyt:#8A94B0;
+    --dark:#2D3A5C; --mid:#4A5578;
+    --red:#dc2626; --red-lt:#fee2e2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Helvetica Neue',sans-serif;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);min-height:100vh;padding-bottom:80px;}
+
+  /* HEADER */
+  .header{background:var(--navy);color:white;padding:18px 16px 14px;}
+  .header h1{font-size:19px;font-weight:800;letter-spacing:.4px;}
+  .header p{font-size:10px;color:#8A94B0;margin-top:3px;}
+
+  /* BOTTOM NAV */
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--navy);display:flex;border-top:1px solid #2D3A5C;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+  .tab{flex:1;padding:10px 2px 8px;text-align:center;font-size:9px;color:#8A94B0;cursor:pointer;border-top:2px solid transparent;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .tab-icon{font-size:18px;line-height:1;}
+  .tab.active{color:var(--blue);border-top-color:var(--blue);}
+
+  /* PAGES */
+  .page{display:none;padding:12px;}
+  .page.active{display:block;}
+
+  /* KPI */
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .kpi-card{background:var(--white);border-radius:12px;padding:13px 12px;border-top:3px solid var(--blue);box-shadow:0 1px 6px rgba(0,0,0,.06);}
+  .kpi-card.teal{border-top-color:var(--vint);}
+  .kpi-card.grn{border-top-color:var(--grn);}
+  .kpi-card.org{border-top-color:var(--org);}
+  .kpi-card.purp{border-top-color:var(--purp);}
+  .kpi-label{font-size:9px;font-weight:700;color:var(--greyt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+  .kpi-value{font-size:20px;font-weight:800;color:var(--blue);}
+  .kpi-card.teal .kpi-value{color:var(--vint);}
+  .kpi-card.grn .kpi-value{color:var(--grn);}
+  .kpi-card.org .kpi-value{color:var(--org);}
+  .kpi-sub{font-size:10px;color:var(--greyt);margin-top:2px;}
+  .kpi-wide{grid-column:1/-1;}
+
+  /* SECTION */
+  .section-title{font-size:12px;font-weight:700;color:var(--navy);padding:10px 0 6px;border-bottom:2px solid var(--blue);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+  .section-sub{font-size:10px;font-weight:400;color:var(--greyt);}
+
+  /* CHART */
+  .chart-wrap{background:var(--white);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+  .chart-title{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:10px;}
+
+  /* MONTH TABLE */
+  .table-wrap{background:var(--white);border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.06);margin-bottom:14px;}
+  .month-row{display:flex;padding:9px 12px;border-bottom:1px solid var(--grey2);font-size:11px;align-items:center;}
+  .month-row:last-child{border-bottom:none;}
+  .month-row.hdr{background:var(--navy);color:white;font-weight:700;font-size:10px;padding:8px 12px;}
+  .month-row.tot{background:var(--navy);color:white;font-weight:700;font-size:12px;}
+  .month-row.alt{background:var(--grey1);}
+  .m-maand{width:46px;font-weight:700;color:var(--dark);flex-shrink:0;}
+  .m-buy{width:64px;color:var(--blue);text-align:right;flex-shrink:0;}
+  .m-vint{width:64px;color:var(--vint);text-align:right;flex-shrink:0;}
+  .m-winst{width:64px;text-align:right;font-weight:700;flex-shrink:0;}
+  .m-pct{flex:1;text-align:right;color:var(--greyt);font-size:10px;}
+
+  /* LIST ROWS — swipe-to-delete style with delete button */
+  .list-item{position:relative;display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid var(--grey2);font-size:12px;background:var(--white);transition:background .15s;}
+  .list-item:last-child{border-bottom:none;}
+  .list-item.alt{background:var(--grey1);}
+  .list-item-body{flex:1;min-width:0;}
+  .li-top{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+  .li-date{font-size:10px;color:var(--greyt);flex-shrink:0;}
+  .li-art{font-size:12px;color:var(--dark);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .li-bottom{display:flex;align-items:center;gap:6px;}
+  .li-maat{font-size:10px;color:var(--purp);font-weight:600;}
+  .li-qty{font-size:10px;color:var(--org);font-weight:700;}
+  .li-amt{font-size:14px;font-weight:800;flex-shrink:0;margin-left:8px;}
+  .li-amt.blue{color:var(--blue);}
+  .li-amt.teal{color:var(--vint);}
+  .del-btn{width:34px;height:34px;border:none;background:var(--red-lt);color:var(--red);border-radius:8px;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-left:8px;font-weight:700;}
+  .del-btn:active{background:#fecaca;}
+
+  /* BADGE */
+  .badge{display:inline-block;padding:1px 6px;border-radius:20px;font-size:9px;font-weight:700;}
+  .b-Schoenen{background:#EBF2FF;color:var(--blue);}
+  .b-Kleding{background:#F0EBFF;color:var(--purp);}
+  .b-Voetbalshirts{background:#E6F9FA;color:var(--teal);}
+  .b-Tassen{background:#FFF0EB;color:var(--org);}
+  .b-Accessoires{background:#EAFAF3;color:var(--grn);}
+  .b-Overige{background:#FFF0F4;color:var(--pink);}
+
+  /* FORMS */
+  .form-card{background:var(--white);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+  .form-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--grey2);}
+  .form-row{margin-bottom:10px;}
+  .form-row label{display:block;font-size:11px;font-weight:600;color:var(--mid);margin-bottom:4px;}
+  .form-row input,.form-row select{width:100%;padding:10px 11px;border:1.5px solid var(--grey2);border-radius:8px;font-size:14px;color:var(--dark);background:var(--bg);outline:none;-webkit-appearance:none;}
+  .form-row input:focus,.form-row select:focus{border-color:var(--blue);background:var(--white);}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .btn{width:100%;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;}
+  .btn-blue{background:var(--blue);color:white;}
+  .btn-teal{background:var(--vint);color:white;}
+  .btn-red{background:var(--red-lt);color:var(--red);font-size:12px;padding:10px;margin-top:8px;}
+  .btn:active{opacity:.85;}
+
+  /* SETTING */
+  .setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--white);border-radius:10px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+  .setting-input{width:100px;padding:7px 9px;border:1.5px solid var(--grey2);border-radius:7px;font-size:14px;text-align:right;color:var(--blue);font-weight:700;background:var(--bg);}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--white);border-radius:20px 20px 0 0;padding:20px 16px 30px;width:100%;max-width:480px;}
+  .modal-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:6px;}
+  .modal-sub{font-size:13px;color:var(--greyt);margin-bottom:16px;}
+  .modal-btns{display:flex;gap:10px;}
+  .modal-btns .btn{flex:1;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:white;padding:10px 22px;border-radius:20px;font-size:13px;font-weight:600;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;}
+
+  /* SEARCH */
+  .search-bar{width:100%;padding:9px 12px;border:1.5px solid var(--grey2);border-radius:10px;font-size:13px;background:var(--white);margin-bottom:10px;outline:none;}
+  .search-bar:focus{border-color:var(--blue);}
+
+  .hdr-row{background:var(--navy);color:white;font-size:10px;font-weight:700;padding:8px 12px;display:flex;gap:8px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>◆ RESELL DASHBOARD</h1>
+  <p>Basetao inkoop · Vinted verkopen · Live winst bijgewerkt</p>
+</div>
+
+<!-- PAGES -->
+<div id="page-overview" class="page active">
+  <div class="kpi-grid" id="kpi-grid"></div>
+  <div class="chart-wrap">
+    <div class="chart-title">Inkoop vs Vinted per maand (€)</div>
+    <canvas id="barChart" height="210"></canvas>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">Verdeling Vinted verkopen per categorie</div>
+    <canvas id="pieChart" height="210"></canvas>
+  </div>
+</div>
+
+<div id="page-maanden" class="page">
+  <div class="section-title">Maandoverzicht <span class="section-sub">inkoop · vinted · winst</span></div>
+  <div class="table-wrap">
+    <div class="month-row hdr">
+      <div class="m-maand">Maand</div>
+      <div class="m-buy">Inkoop</div>
+      <div class="m-vint">Vinted</div>
+      <div class="m-winst">Winst</div>
+      <div class="m-pct">%</div>
+    </div>
+    <div id="maand-rows"></div>
+  </div>
+</div>
+
+<div id="page-inkoop" class="page">
+  <div class="section-title">
+    Inkoop <span class="section-sub" id="inkoop-count"></span>
+  </div>
+  <input class="search-bar" type="search" placeholder="🔍 Zoek artikel..." id="inkoop-search" oninput="renderInkoop()">
+  <div id="inkoop-list"></div>
+</div>
+
+<div id="page-vinted" class="page">
+  <div class="section-title">
+    Vinted <span class="section-sub" id="vinted-count"></span>
+  </div>
+  <input class="search-bar" type="search" placeholder="🔍 Zoek artikel..." id="vinted-search" oninput="renderVinted()">
+  <div id="vinted-list"></div>
+</div>
+
+<div id="page-add" class="page">
+  <!-- VINTED -->
+  <div class="form-card">
+    <div class="form-title">💰 Vinted verkoop toevoegen</div>
+    <div class="form-row"><label>Datum</label><input type="date" id="v-datum"></div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Categorie</label>
+        <select id="v-cat"><option>Schoenen</option><option>Kleding</option><option>Tassen</option><option>Accessoires</option><option>Overige</option></select>
+      </div>
+      <div class="form-row"><label>Opbrengst €</label><input type="number" id="v-eur" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+    </div>
+    <div class="form-row"><label>Artikel / Omschrijving</label><input type="text" id="v-art" placeholder="bijv. Samba OG Maroon"></div>
+    <button class="btn btn-teal" onclick="addVinted()">✓ Verkoop toevoegen</button>
+  </div>
+
+  <!-- INKOOP -->
+  <div class="form-card">
+    <div class="form-title">📥 Inkoop toevoegen</div>
+    <div class="form-row"><label>Datum</label><input type="date" id="i-datum"></div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Categorie</label>
+        <select id="i-cat"><option>Schoenen</option><option>Kleding</option><option>Voetbalshirts</option><option>Tassen</option><option>Accessoires</option><option>Overige</option></select>
+      </div>
+      <div class="form-row">
+        <label>Platform</label>
+        <select id="i-plat"><option>Basetao</option><option>Pandabuy</option><option>Sugargoo</option><option>Cssbuy</option><option>Andere</option></select>
+      </div>
+    </div>
+    <div class="form-row"><label>Artikel / Omschrijving</label><input type="text" id="i-art" placeholder="bijv. Samba OG Maroon"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Maat</label><input type="text" id="i-maat" placeholder="bijv. 39, S, M"></div>
+      <div class="form-row"><label>Aantal</label><input type="number" id="i-qty" value="1" min="1" inputmode="numeric"></div>
+    </div>
+    <div class="form-row"><label>Prijs per stuk (¥)</label><input type="number" id="i-prijs" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+    <button class="btn btn-blue" onclick="addInkoop()">✓ Inkoop toevoegen</button>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="form-card">
+    <div class="form-title">⚙️ Instellingen</div>
+    <div class="setting-row">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--dark)">Wisselkoers</div>
+        <div style="font-size:10px;color:var(--greyt)">1 CNY = ? euro</div>
+      </div>
+      <input class="setting-input" type="number" id="eur-rate" step="0.00001" inputmode="decimal">
+    </div>
+    <button class="btn btn-blue" onclick="saveRate()">Wisselkoers opslaan</button>
+    <button class="btn btn-red" onclick="confirmReset()" style="margin-top:10px">⚠️ Alles resetten naar standaard</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="tab active" onclick="showPage('overview',this)"><div class="tab-icon">📊</div>Overview</div>
+  <div class="tab" onclick="showPage('maanden',this)"><div class="tab-icon">📅</div>Maanden</div>
+  <div class="tab" onclick="showPage('inkoop',this)"><div class="tab-icon">📥</div>Inkoop</div>
+  <div class="tab" onclick="showPage('vinted',this)"><div class="tab-icon">💰</div>Vinted</div>
+  <div class="tab" onclick="showPage('add',this)"><div class="tab-icon">➕</div>Toevoegen</div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Regel verwijderen?</div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-btns">
+      <button class="btn btn-red" onclick="confirmDelete()">🗑 Verwijderen</button>
+      <button class="btn" style="background:var(--grey2);color:var(--dark)" onclick="closeModal()">Annuleren</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════ DEFAULT DATA ═══════════════════
+const DEFAULT_RATE = 0.12441;
+const DEFAULT_INKOOP = [
+  ["2026-02-28","Voetbalshirts","Basetao","Nederland 1998 LS","S",3,57.00],
+  ["2026-02-28","Voetbalshirts","Basetao","Nederland 1998 LS","M",3,57.00],
+  ["2026-02-26","Schoenen","Basetao","Samba OG","39F",1,270.00],
+  ["2026-02-26","Schoenen","Basetao","Samba OG","38F",1,270.00],
+  ["2026-02-26","Schoenen","Basetao","Bonner Studded Cream White","38",1,260.00],
+  ["2026-02-26","Schoenen","Basetao","Bonner Studded Cream White","39",2,260.00],
+  ["2026-02-26","Schoenen","Basetao","Bonner Studded Cream White","40",1,260.00],
+  ["2026-02-26","Schoenen","Basetao","NB U204 Silver Navy","EUR44",1,260.00],
+  ["2026-02-26","Schoenen","Basetao","Samba Vegan Black Horse Hair","EUR43",2,160.00],
+  ["2026-02-26","Voetbalshirts","Basetao","Stussy x Atletico","S",4,23.00],
+  ["2026-02-26","Voetbalshirts","Basetao","Stussy x Atletico","M",4,23.00],
+  ["2026-02-26","Voetbalshirts","Basetao","Nederland 2425","S",2,35.00],
+  ["2026-02-26","Voetbalshirts","Basetao","Nederland 2425","M",2,35.00],
+  ["2026-02-26","Voetbalshirts","Basetao","Nederland 1998 LS","S",2,57.00],
+  ["2026-02-26","Voetbalshirts","Basetao","Nederland 1998 LS","M",2,57.00],
+  ["2025-12-14","Schoenen","Basetao","Samba OG Earth Strata","38",2,150.00],
+  ["2025-12-14","Schoenen","Basetao","Samba OG Earth Strata","39",2,150.00],
+  ["2025-12-14","Schoenen","Basetao","Samba OG Maroon","38",1,150.00],
+  ["2025-12-14","Schoenen","Basetao","Samba OG Maroon","39",1,150.00],
+  ["2025-12-14","Schoenen","Basetao","Alison Sneaker","44M",1,466.49],
+  ["2025-12-14","Kleding","Basetao","N88 Leopard Top","S",1,189.00],
+  ["2025-12-14","Kleding","Basetao","Wintermuts","one size",1,100.00],
+  ["2025-12-14","Schoenen","Basetao","Samba Black Horse Hair","FR44",1,160.00],
+  ["2025-12-14","Schoenen","Basetao","Samba Miuccia","39F",1,270.00],
+  ["2025-12-14","Kleding","Basetao","Kar LS Shirt","S",1,128.00],
+  ["2025-12-14","Kleding","Basetao","GMP Gebreide Muts","one size",1,68.00],
+  ["2025-12-14","Schoenen","Basetao","Snow Boots Chocolate","44M",1,380.00],
+  ["2025-10-08","Schoenen","Basetao","Samba OG Maroon","38",1,150.00],
+  ["2025-06-22","Schoenen","Basetao","Nationale Sneaker","44M",1,220.00],
+  ["2025-06-15","Accessoires","Basetao","TWS Earphones V5.3","one size",1,400.00],
+  ["2025-06-15","Schoenen","Basetao","Bonner Studded Cream White","39",1,260.00],
+  ["2025-06-15","Schoenen","Basetao","Bonner Studded Cream White","38",1,260.00],
+  ["2025-06-15","Kleding","Basetao","Madman Ate White Leaf","S",1,99.00],
+  ["2025-06-15","Kleding","Basetao","Madman Ate Green Foam","S",1,99.00],
+  ["2025-06-15","Kleding","Basetao","Madman Ate Heart Embroidery","S",1,99.00],
+  ["2025-06-15","Kleding","Basetao","Madman Ate Energy Tee","M",1,99.00],
+  ["2025-06-15","Overige","Basetao","Underwear 3x","M",1,30.00],
+  ["2025-06-15","Schoenen","Basetao","Travis Scott Nike PK","EUR44",1,360.00],
+  ["2025-06-15","Accessoires","Basetao","Socks 6x White","L 43-46",2,21.00],
+  ["2025-06-15","Schoenen","Basetao","Samba OG Maroon","38",1,150.00],
+  ["2025-06-15","Schoenen","Basetao","Samba OG Maroon","39",1,150.00],
+  ["2025-06-15","Tassen","Basetao","Straw Bag Yellow","33x36",1,45.00],
+  ["2025-06-15","Tassen","Basetao","Straw Bag Amber","33x36",1,45.00],
+  ["2025-06-15","Tassen","Basetao","Straw Bag Orange","33x36",1,45.00],
+  ["2025-06-15","Tassen","Basetao","Knitted Bag Beige","one size",1,35.00],
+  ["2025-06-15","Tassen","Basetao","Knitted Bag Brown","one size",1,35.00],
+  ["2025-06-08","Tassen","Basetao","GAN Canvas Bag S Leopard","40x23",4,99.90],
+  ["2025-06-08","Tassen","Basetao","GAN Canvas Bag L Leopard","69x34",1,115.00],
+  ["2025-06-08","Schoenen","Basetao","Samba OG Wonder White Maroon","39",1,150.00],
+  ["2025-06-08","Schoenen","Basetao","Samba OG Off White Blue","38",1,150.00],
+  ["2025-06-08","Schoenen","Basetao","Samba OG Off White Blue","39",2,150.00],
+  ["2025-06-08","Tassen","Basetao","Longchamp 70th Large","large",1,46.00],
+  ["2025-06-08","Tassen","Basetao","Longchamp 70th Medium","medium",1,46.00],
+  ["2025-06-08","Schoenen","Basetao","Asics Gel Kayano 14","EUR45",1,220.00],
+  ["2025-05-08","Schoenen","Basetao","Adidas Handball Spezial","EUR43",1,169.00],
+  ["2025-05-05","Schoenen","Basetao","CLOT x Gazelle Navy","FR39",1,200.00],
+  ["2025-05-05","Schoenen","Basetao","Samba Vegan Rice Brown","FR39",1,160.00],
+  ["2025-05-05","Schoenen","Basetao","Handball Spezial Navy Gum","FR43",1,150.00],
+  ["2025-05-05","Schoenen","Basetao","Samba OG Wonder White","FR39",1,150.00],
+  ["2025-05-05","Schoenen","Basetao","Nike Vomero 5 Platinum","FR43",1,200.00],
+  ["2025-05-05","Schoenen","Basetao","Samba Vegan White Black","FR39",1,150.00],
+  ["2025-05-05","Schoenen","Basetao","Samba OG Off White Blue","FR39",1,150.00],
+  ["2025-05-05","Schoenen","Basetao","Asics Gel Kayano 14","EUR44",1,220.00],
+  ["2025-04-17","Schoenen","Basetao","Handball Spezial IF6490","EUR44",1,169.00],
+  ["2025-04-17","Schoenen","Basetao","Handball Spezial IF6490","EUR38",1,169.00],
+  ["2025-04-16","Tassen","Basetao","GAN Canvas Bag L","69x34",1,115.00],
+  ["2025-04-16","Tassen","Basetao","GAN Canvas Bag S","40x23",1,99.90],
+  ["2025-04-16","Tassen","Basetao","GAN Canvas Bag Black","38x32",1,115.00],
+  ["2025-04-16","Tassen","Basetao","Longchamp Small","small",1,46.00],
+  ["2025-04-16","Tassen","Basetao","Longchamp Large Navy","large",1,46.00],
+  ["2025-04-16","Kleding","Basetao","Madman Jeans Blauw","L",1,190.00],
+  ["2025-04-16","Kleding","Basetao","Madman Flower Trui","M",1,330.00],
+  ["2025-04-16","Kleding","Basetao","Madman Blur Rose Wit","M",1,99.00],
+  ["2025-04-16","Kleding","Basetao","Madman Flower Print","M",1,99.00],
+  ["2025-04-16","Schoenen","Basetao","Asics Gel-NYC Beige","EU43.5M",1,280.00],
+  ["2025-04-16","Schoenen","Basetao","Asics Gel-NYC Pink","EU38F",1,280.00],
+  ["2025-03-20","Kleding","Basetao","Top FR Shirt Beige","S",1,169.00],
+  ["2025-03-20","Kleding","Basetao","Top FR Shirt Beige","M",1,169.00],
+  ["2025-03-20","Kleding","Basetao","Top FR Shirt Oranje","S",1,169.00],
+  ["2025-03-19","Schoenen","Basetao","Samba OG Bruin","39",1,240.00],
+  ["2025-03-19","Schoenen","Basetao","Samba OG Bruin","40",1,240.00],
+  ["2025-03-19","Schoenen","Basetao","Samba Strawberry Bear","39",1,155.00],
+  ["2025-03-19","Schoenen","Basetao","Samba Vegan Luipaard","CHN240/38",1,160.00],
+  ["2025-03-19","Schoenen","Basetao","Samba Vegan Luipaard","CHN245/39",1,160.00],
+  ["2025-03-19","Kleding","Basetao","Madman Jeans Blauw","M",1,190.00],
+  ["2025-03-19","Kleding","Basetao","Madman Jeans Blauw","S",1,190.00],
+  ["2025-03-19","Accessoires","Basetao","Ralph Lauren Cap Khaki","one size",1,38.00],
+  ["2025-03-19","Accessoires","Basetao","Ralph Lauren Cap Navy","one size",1,38.00],
+  ["2025-03-09","Kleding","Basetao","Ita Bloem Shirt","S",2,120.00],
+  ["2025-03-09","Kleding","Basetao","Ita Roos Shirt","S",1,120.00],
+  ["2025-03-09","Voetbalshirts","Basetao","Inter Milan 2324","S",1,39.90],
+  ["2025-03-09","Voetbalshirts","Basetao","Inter Milan 2324","M",3,39.90],
+  ["2025-03-09","Voetbalshirts","Basetao","Inter Milan 2324","L",3,39.90],
+  ["2025-03-09","Voetbalshirts","Basetao","Nederland 2425","M",3,39.90],
+  ["2025-03-09","Schoenen","Basetao","Samba Luipaard","UK6/39",2,160.00],
+  ["2025-03-09","Kleding","Basetao","Artie Tee Zwart","S",1,40.00],
+  ["2025-03-09","Kleding","Basetao","Artie Tee Grijs","S",1,40.00],
+  ["2025-02-08","Schoenen","Basetao","Samba Vegan Luipaard","FR39",2,160.00],
+  ["2025-02-08","Schoenen","Basetao","Samba White Haired Horse","CHN240/38",2,160.00],
+  ["2025-02-08","Schoenen","Basetao","Samba Black Horse Hair","CHN240/38",1,160.00],
+  ["2025-02-08","Schoenen","Basetao","Nike P-6000 Iron Ore","EU43",1,200.00],
+  ["2025-01-17","Schoenen","Basetao","Samba Vegan Luipaard","UK6/39",1,160.00],
+  ["2025-01-17","Schoenen","Basetao","Samba White Haired Horse","UK6/39",1,160.00],
+  ["2025-01-17","Schoenen","Basetao","NB 530 Silver","EU39.5",1,160.00],
+  ["2025-01-17","Accessoires","Basetao","Socks Thick Middle Tube","L 43-46",2,23.00],
+  ["2025-01-17","Accessoires","Basetao","Socks Long Tube","L 43-46",1,20.00],
+  ["2025-01-17","Kleding","Basetao","Heyplay Hoodie","M",1,125.00],
+  ["2025-01-17","Schoenen","Basetao","Nike P-6000 Iron Ore","EU44.5",1,200.00],
+];
+
+const DEFAULT_VINTED = [
+  ["2025-01-28","Schoenen","Samba",65.00],
+  ["2025-02-05","Kleding","",35.00],
+  ["2025-02-10","Schoenen","Samba",75.00],
+  ["2025-02-15","Schoenen","Samba",160.00],
+  ["2025-02-15","Schoenen","Miu Miu x New Balance",170.00],
+  ["2025-02-24","Kleding","",20.00],
+  ["2025-03-13","Schoenen","Samba",150.00],
+  ["2025-03-13","Schoenen","Samba",126.00],
+  ["2025-03-15","Schoenen","Samba",120.00],
+  ["2025-03-15","Schoenen","Samba",120.00],
+  ["2025-03-26","Schoenen","Samba",65.00],
+  ["2025-03-29","Schoenen","",42.50],
+  ["2025-03-30","Schoenen","",65.00],
+  ["2025-04-01","Schoenen","",60.00],
+  ["2025-04-04","Schoenen","",55.00],
+  ["2025-04-05","Schoenen","",58.00],
+  ["2025-04-08","Schoenen","",50.00],
+  ["2025-04-08","Schoenen","",52.00],
+  ["2025-04-09","Schoenen","",50.00],
+  ["2025-04-10","Schoenen","",70.00],
+  ["2025-04-11","Schoenen","",50.00],
+  ["2025-04-12","Schoenen","",95.00],
+  ["2025-04-13","Kleding","",30.00],
+  ["2025-04-14","Schoenen","Samba Wales Bonner",140.00],
+  ["2025-04-17","Schoenen","",95.00],
+  ["2025-04-17","Kleding","",25.00],
+  ["2025-04-24","Schoenen","",115.00],
+  ["2025-05-12","Kleding","",20.00],
+  ["2025-05-14","Schoenen","",60.00],
+  ["2025-05-19","Schoenen","",95.00],
+  ["2025-05-20","Schoenen","",110.00],
+  ["2025-05-23","Schoenen","",99.00],
+  ["2025-05-24","Schoenen","",55.00],
+  ["2025-05-25","Schoenen","",100.00],
+  ["2025-05-28","Kleding","",47.00],
+  ["2025-05-30","Schoenen","",60.00],
+  ["2025-06-01","Kleding","",45.00],
+  ["2025-06-04","Schoenen","",49.00],
+  ["2025-06-05","Schoenen","",95.00],
+  ["2025-06-06","Kleding","",65.00],
+  ["2025-06-06","Schoenen","",115.00],
+  ["2025-06-10","Schoenen","",125.00],
+  ["2025-06-11","Schoenen","",80.00],
+  ["2025-06-16","Schoenen","",110.00],
+  ["2025-07-09","Schoenen","",80.00],
+  ["2025-07-09","Schoenen","",110.00],
+  ["2025-07-11","Schoenen","",50.00],
+  ["2025-07-11","Schoenen","",90.00],
+  ["2025-07-11","Schoenen","",125.00],
+  ["2025-07-11","Schoenen","",67.50],
+  ["2025-07-11","Schoenen","",80.00],
+  ["2025-07-14","Schoenen","",55.00],
+  ["2025-07-14","Schoenen","",105.00],
+  ["2025-07-16","Schoenen","",55.00],
+  ["2025-07-17","Schoenen","",65.00],
+  ["2025-07-18","Schoenen","",50.00],
+  ["2025-07-18","Schoenen","",75.00],
+  ["2025-07-19","Schoenen","",55.00],
+  ["2025-07-28","Schoenen","Samba Wales Bonner",160.00],
+  ["2025-08-27","Schoenen","",103.50],
+  ["2025-08-27","Schoenen","Samba Wales Bonner",160.00],
+  ["2025-09-10","Schoenen","",45.00],
+  ["2025-09-18","Schoenen","",110.00],
+  ["2026-01-13","Schoenen","Miu Miu x New Balance",170.00],
+  ["2026-01-14","Schoenen","Samba Wales Bonner",144.00],
+  ["2026-01-15","Schoenen","Nike Air Force",20.00],
+  ["2026-01-29","Kleding","Miu Miu Muts",36.00],
+  ["2026-01-29","Schoenen","Samba OG Earth Strata",105.00],
+  ["2026-01-30","Kleding","Miu Miu Muts",35.00],
+  ["2026-02-04","Schoenen","Samba OG Earth Strata",80.00],
+  ["2026-02-13","Schoenen","Adidas Samba Maroon",75.00],
+  ["2026-02-13","Kleding","Adidas Leopard Wide Pants",45.00],
+  ["2026-02-24","Schoenen","Samba OG Earth Strata",88.00],
+  ["2026-02-24","Schoenen","Samba OG Earth Strata",70.00],
+  ["2026-02-24","Schoenen","Samba OG Maroon Gold Metallic",80.00],
+  ["2026-04-10","Kleding","Arte T-shirt",35.00],
+  ["2026-04-11","Kleding","Arte Broek",65.00],
+  ["2026-04-15","Schoenen","Stussy x Nike NL T-shirt Koningsdag",43.00],
+  ["2026-04-15","Kleding","Stussy x Nike Tshirt Koningsdag",25.00],
+  ["2026-04-15","Kleding","Arte T-shirt",38.00],
+  ["2026-04-17","Kleding","Arte T-shirt",35.00],
+  ["2026-04-17","Kleding","Nike x Stussy Shirt Koningsdag",45.00],
+  ["2026-04-19","Kleding","Nike x Stussy Inter Milan Shirt Koningsdag",45.00],
+];
+
+// ═══════════════════ STATE ═══════════════════
+function loadData() {
+  return {
+    rate: parseFloat(localStorage.getItem('rdb_rate') || DEFAULT_RATE),
+    inkoop: JSON.parse(localStorage.getItem('rdb_inkoop') || 'null') || JSON.parse(JSON.stringify(DEFAULT_INKOOP)),
+    vinted: JSON.parse(localStorage.getItem('rdb_vinted') || 'null') || JSON.parse(JSON.stringify(DEFAULT_VINTED)),
+  };
+}
+function saveData() {
+  localStorage.setItem('rdb_rate', D.rate);
+  localStorage.setItem('rdb_inkoop', JSON.stringify(D.inkoop));
+  localStorage.setItem('rdb_vinted', JSON.stringify(D.vinted));
+}
+let D = loadData();
+
+// ═══════════════════ HELPERS ═══════════════════
+const eur = n => '€' + n.toFixed(2).replace('.',',');
+const cny = n => '¥' + Math.round(n).toLocaleString('nl');
+function badge(cat) { return `<span class="badge b-${cat}">${cat}</span>`; }
+function monthlyData() {
+  const m = {};
+  D.inkoop.forEach(r => { const k=r[0].slice(0,7); m[k]=m[k]||{b:0,v:0}; m[k].b+=r[5]*r[6]*D.rate; });
+  D.vinted.forEach(r => { const k=r[0].slice(0,7); m[k]=m[k]||{b:0,v:0}; m[k].v+=r[3]; });
+  return m;
+}
+
+// ═══════════════════ DELETE MODAL ═══════════════════
+let pendingDelete = null;
+function askDelete(type, idx, label) {
+  pendingDelete = { type, idx };
+  document.getElementById('modal-title').textContent = (type==='vinted'?'💰':'📥') + ' Regel verwijderen?';
+  document.getElementById('modal-sub').textContent = label;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  pendingDelete = null;
+}
+function confirmDelete() {
+  if (!pendingDelete) return;
+  if (pendingDelete.type === 'inkoop') D.inkoop.splice(pendingDelete.idx, 1);
+  else D.vinted.splice(pendingDelete.idx, 1);
+  saveData();
+  closeModal();
+  renderAll();
+  toast('🗑 Verwijderd — alles bijgewerkt');
+}
+document.getElementById('modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+
+// ═══════════════════ RENDER KPIs ═══════════════════
+function renderKPIs() {
+  const totCNY = D.inkoop.reduce((s,r)=>s+r[5]*r[6],0);
+  const totEUR = totCNY * D.rate;
+  const totV   = D.vinted.reduce((s,r)=>s+r[3],0);
+  const winst  = totV - totEUR;
+  const marge  = totEUR>0 ? (winst/totEUR*100) : 0;
+  const stuks  = D.inkoop.reduce((s,r)=>s+r[5],0);
+  const wc     = winst>=0 ? 'var(--grn)' : 'var(--red)';
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Totale Inkoop</div>
+      <div class="kpi-value" style="font-size:17px">${cny(totCNY)}</div>
+      <div class="kpi-sub">${eur(totEUR)}</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-label">Vinted Opbrengst</div>
+      <div class="kpi-value">${eur(totV)}</div>
+      <div class="kpi-sub">${D.vinted.length} verkopen</div>
+    </div>
+    <div class="kpi-card grn">
+      <div class="kpi-label">Bruto Winst</div>
+      <div class="kpi-value" style="color:${wc}">${eur(winst)}</div>
+      <div class="kpi-sub">Marge: ${marge.toFixed(1)}%</div>
+    </div>
+    <div class="kpi-card org">
+      <div class="kpi-label">Stuks Ingekocht</div>
+      <div class="kpi-value">${stuks}</div>
+      <div class="kpi-sub">${D.inkoop.length} regels</div>
+    </div>`;
+}
+
+// ═══════════════════ RENDER CHARTS ═══════════════════
+let barC, pieC;
+function renderCharts() {
+  const m = monthlyData();
+  const keys = Object.keys(m).sort();
+  const labels = keys.map(k => k.slice(5)+'/'+k.slice(2,4));
+  const bVals = keys.map(k => +m[k].b.toFixed(2));
+  const vVals = keys.map(k => +m[k].v.toFixed(2));
+  if (barC) barC.destroy();
+  barC = new Chart(document.getElementById('barChart'), {
+    type:'bar', data:{ labels,
+      datasets:[
+        {label:'Inkoop €',data:bVals,backgroundColor:'#4F8EF7',borderRadius:4},
+        {label:'Vinted €',data:vVals,backgroundColor:'#09B1AA',borderRadius:4}
+      ]},
+    options:{responsive:true,plugins:{legend:{position:'top'}},
+      scales:{y:{ticks:{callback:v=>'€'+v}}}}
+  });
+  const cats={};
+  D.vinted.forEach(r=>{cats[r[1]]=(cats[r[1]]||0)+r[3];});
+  const cl=Object.keys(cats).sort((a,b)=>cats[b]-cats[a]), cv=cl.map(c=>+cats[c].toFixed(2));
+  if (pieC) pieC.destroy();
+  pieC = new Chart(document.getElementById('pieChart'), {
+    type:'doughnut', data:{labels:cl,
+      datasets:[{data:cv,backgroundColor:['#4F8EF7','#7C5CFC','#3EC9CF','#FF7B54','#47C98F','#F76B8A'],borderWidth:2}]},
+    options:{responsive:true,plugins:{legend:{position:'bottom'}}}
+  });
+}
+
+// ═══════════════════ RENDER MAANDEN ═══════════════════
+function renderMaanden() {
+  const m = monthlyData();
+  const keys = Object.keys(m).sort();
+  let tb=0,tv=0,html='';
+  keys.forEach((k,i)=>{
+    const b=m[k].b,v=m[k].v,w=v-b,mg=b>0?(w/b*100).toFixed(1):'-';
+    tb+=b; tv+=v;
+    const wc=w>=0?'var(--grn)':'var(--red)';
+    html+=`<div class="month-row ${i%2?'alt':''}">
+      <div class="m-maand">${k.slice(5)+'/'+k.slice(2,4)}</div>
+      <div class="m-buy">${eur(b)}</div>
+      <div class="m-vint">${eur(v)}</div>
+      <div class="m-winst" style="color:${wc}">${eur(w)}</div>
+      <div class="m-pct">${mg}%</div>
+    </div>`;
+  });
+  const tw=tv-tb,wc2=tw>=0?'#47C98F':'#ff6b6b';
+  html+=`<div class="month-row tot">
+    <div class="m-maand">TOT</div>
+    <div class="m-buy">${eur(tb)}</div>
+    <div class="m-vint">${eur(tv)}</div>
+    <div class="m-winst" style="color:${wc2}">${eur(tw)}</div>
+    <div class="m-pct">${tb>0?(tw/tb*100).toFixed(1):0}%</div>
+  </div>`;
+  document.getElementById('maand-rows').innerHTML = html;
+}
+
+// ═══════════════════ RENDER INKOOP ═══════════════════
+function renderInkoop() {
+  const q = (document.getElementById('inkoop-search')?.value||'').toLowerCase();
+  // Sort newest first, keep original index for deletion
+  const indexed = D.inkoop.map((r,i)=>({r,i})).sort((a,b)=>b.r[0].localeCompare(a.r[0]));
+  const filtered = q ? indexed.filter(({r})=>r[3].toLowerCase().includes(q)||r[1].toLowerCase().includes(q)) : indexed;
+  document.getElementById('inkoop-count').textContent = `${filtered.length} regels · ${eur(filtered.reduce((s,{r})=>s+r[5]*r[6]*D.rate,0))}`;
+  let html='';
+  filtered.forEach(({r,i},fi)=>{
+    const e=r[5]*r[6]*D.rate;
+    html+=`<div class="list-item ${fi%2?'alt':''}">
+      <div class="list-item-body">
+        <div class="li-top">
+          <span class="li-date">${r[0].slice(5)}</span>
+          ${badge(r[1])}
+          <span class="li-art">${r[3]}</span>
+        </div>
+        <div class="li-bottom">
+          <span class="li-maat">${r[4]}</span>
+          ${r[5]>1?`<span class="li-qty">${r[5]}×</span>`:''}
+          <span style="font-size:10px;color:var(--greyt)">¥${r[6]}/stk</span>
+        </div>
+      </div>
+      <span class="li-amt blue">${eur(e)}</span>
+      <button class="del-btn" onclick="askDelete('inkoop',${i},'${r[3].replace(/'/g,"\\'")} · ${r[0]}')">×</button>
+    </div>`;
+  });
+  document.getElementById('inkoop-list').innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--greyt)">Geen resultaten</div>';
+}
+
+// ═══════════════════ RENDER VINTED ═══════════════════
+function renderVinted() {
+  const q = (document.getElementById('vinted-search')?.value||'').toLowerCase();
+  const indexed = D.vinted.map((r,i)=>({r,i})).sort((a,b)=>b.r[0].localeCompare(a.r[0]));
+  const filtered = q ? indexed.filter(({r})=>(r[2]||'').toLowerCase().includes(q)||r[1].toLowerCase().includes(q)) : indexed;
+  document.getElementById('vinted-count').textContent = `${filtered.length} verkopen · ${eur(filtered.reduce((s,{r})=>s+r[3],0))}`;
+  let html='';
+  filtered.forEach(({r,i},fi)=>{
+    html+=`<div class="list-item ${fi%2?'alt':''}">
+      <div class="list-item-body">
+        <div class="li-top">
+          <span class="li-date">${r[0].slice(5)}</span>
+          ${badge(r[1])}
+          <span class="li-art">${r[2]||'('+r[1]+')'}</span>
+        </div>
+      </div>
+      <span class="li-amt teal">${eur(r[3])}</span>
+      <button class="del-btn" onclick="askDelete('vinted',${i},'${(r[2]||r[1]).replace(/'/g,"\\'")} · ${r[0]}')">×</button>
+    </div>`;
+  });
+  document.getElementById('vinted-list').innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--greyt)">Geen resultaten</div>';
+}
+
+// ═══════════════════ ADD ═══════════════════
+function addVinted() {
+  const d=document.getElementById('v-datum').value;
+  const cat=document.getElementById('v-cat').value;
+  const e=parseFloat(document.getElementById('v-eur').value);
+  const art=document.getElementById('v-art').value.trim();
+  if(!d||isNaN(e)||e<=0){toast('Vul datum en bedrag in ⚠️');return;}
+  D.vinted.push([d,cat,art,e]);
+  saveData(); renderAll();
+  document.getElementById('v-eur').value='';
+  document.getElementById('v-art').value='';
+  toast('✓ Verkoop toegevoegd & winst bijgewerkt!');
+}
+
+function addInkoop() {
+  const d=document.getElementById('i-datum').value;
+  const cat=document.getElementById('i-cat').value;
+  const plat=document.getElementById('i-plat').value;
+  const art=document.getElementById('i-art').value.trim();
+  const maat=document.getElementById('i-maat').value.trim();
+  const qty=parseInt(document.getElementById('i-qty').value)||1;
+  const prijs=parseFloat(document.getElementById('i-prijs').value);
+  if(!d||isNaN(prijs)||prijs<=0){toast('Vul datum en prijs in ⚠️');return;}
+  D.inkoop.push([d,cat,plat,art,maat,qty,prijs]);
+  saveData(); renderAll();
+  document.getElementById('i-art').value='';
+  document.getElementById('i-maat').value='';
+  document.getElementById('i-qty').value='1';
+  document.getElementById('i-prijs').value='';
+  toast('✓ Inkoop toegevoegd & dashboard bijgewerkt!');
+}
+
+function saveRate() {
+  const r=parseFloat(document.getElementById('eur-rate').value);
+  if(isNaN(r)||r<=0){toast('Ongeldige koers ⚠️');return;}
+  D.rate=r; saveData(); renderAll();
+  toast('✓ Wisselkoers opgeslagen!');
+}
+
+function confirmReset() {
+  if(!confirm('Weet je zeker dat je ALLES wilt resetten? Dit verwijdert ook je eigen toevoegingen.')) return;
+  localStorage.removeItem('rdb_rate');
+  localStorage.removeItem('rdb_inkoop');
+  localStorage.removeItem('rdb_vinted');
+  D=loadData(); renderAll();
+  toast('Data teruggezet naar standaard');
+}
+
+// ═══════════════════ TOAST ═══════════════════
+function toast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ═══════════════════ NAV ═══════════════════
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  if(name==='overview'){renderKPIs();renderCharts();}
+  if(name==='maanden') renderMaanden();
+  if(name==='inkoop')  renderInkoop();
+  if(name==='vinted')  renderVinted();
+}
+
+function renderAll() {
+  renderKPIs(); renderCharts(); renderMaanden(); renderInkoop(); renderVinted();
+}
+
+// ═══════════════════ INIT ═══════════════════
+const today=new Date().toISOString().slice(0,10);
+document.getElementById('v-datum').value=today;
+document.getElementById('i-datum').value=today;
+document.getElementById('eur-rate').value=D.rate;
+renderAll();
+</script>
+</body>
+</html>
