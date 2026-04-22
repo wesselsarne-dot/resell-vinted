@@ -2,7 +2,10 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1E2A4A">
 <title>Resell Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -10,259 +13,273 @@
     --bg:#F5F6FA; --white:#FFFFFF; --navy:#1E2A4A;
     --blue:#4F8EF7; --purp:#7C5CFC; --teal:#3EC9CF;
     --org:#FF7B54; --grn:#47C98F; --pink:#F76B8A; --vint:#09B1AA;
+    --yel:#F5B942;
     --grey1:#F0F2F8; --grey2:#E0E4F0; --greyt:#8A94B0;
     --dark:#2D3A5C; --mid:#4A5578;
     --red:#dc2626; --red-lt:#fee2e2;
   }
   *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Helvetica Neue',sans-serif;-webkit-tap-highlight-color:transparent;}
-  body{background:var(--bg);min-height:100vh;padding-bottom:80px;}
-
-  /* HEADER */
+  body{background:var(--bg);min-height:100vh;padding-bottom:80px;color:var(--dark);}
   .header{background:var(--navy);color:white;padding:18px 16px 14px;}
   .header h1{font-size:19px;font-weight:800;letter-spacing:.4px;}
   .header p{font-size:10px;color:#8A94B0;margin-top:3px;}
-
-  /* BOTTOM NAV */
-  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--navy);display:flex;border-top:1px solid #2D3A5C;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
-  .tab{flex:1;padding:10px 2px 8px;text-align:center;font-size:9px;color:#8A94B0;cursor:pointer;border-top:2px solid transparent;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--navy);display:flex;border-top:1px solid #2D3A5C;z-index:100;padding-bottom:env(safe-area-inset-bottom);overflow-x:auto;scrollbar-width:none;}
+  .bottom-nav::-webkit-scrollbar{display:none;}
+  .tab{flex:1;min-width:68px;padding:10px 2px 8px;text-align:center;font-size:10px;color:#8A94B0;cursor:pointer;border-top:2px solid transparent;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border-left:none;border-right:none;border-bottom:none;font-weight:600;letter-spacing:.3px;}
   .tab-icon{font-size:18px;line-height:1;}
   .tab.active{color:var(--blue);border-top-color:var(--blue);}
-
-  /* PAGES */
   .page{display:none;padding:12px;}
   .page.active{display:block;}
-
-  /* KPI */
   .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
   .kpi-card{background:var(--white);border-radius:12px;padding:13px 12px;border-top:3px solid var(--blue);box-shadow:0 1px 6px rgba(0,0,0,.06);}
   .kpi-card.teal{border-top-color:var(--vint);}
   .kpi-card.grn{border-top-color:var(--grn);}
   .kpi-card.org{border-top-color:var(--org);}
+  .kpi-card.yel{border-top-color:var(--yel);}
   .kpi-card.purp{border-top-color:var(--purp);}
-  .kpi-label{font-size:9px;font-weight:700;color:var(--greyt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
-  .kpi-value{font-size:20px;font-weight:800;color:var(--blue);}
-  .kpi-card.teal .kpi-value{color:var(--vint);}
-  .kpi-card.grn .kpi-value{color:var(--grn);}
-  .kpi-card.org .kpi-value{color:var(--org);}
-  .kpi-sub{font-size:10px;color:var(--greyt);margin-top:2px;}
-  .kpi-wide{grid-column:1/-1;}
-
-  /* SECTION */
-  .section-title{font-size:12px;font-weight:700;color:var(--navy);padding:10px 0 6px;border-bottom:2px solid var(--blue);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
-  .section-sub{font-size:10px;font-weight:400;color:var(--greyt);}
-
-  /* CHART */
-  .chart-wrap{background:var(--white);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
-  .chart-title{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:10px;}
-
-  /* MONTH TABLE */
-  .table-wrap{background:var(--white);border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.06);margin-bottom:14px;}
-  .month-row{display:flex;padding:9px 12px;border-bottom:1px solid var(--grey2);font-size:11px;align-items:center;}
-  .month-row:last-child{border-bottom:none;}
-  .month-row.hdr{background:var(--navy);color:white;font-weight:700;font-size:10px;padding:8px 12px;}
-  .month-row.tot{background:var(--navy);color:white;font-weight:700;font-size:12px;}
-  .month-row.alt{background:var(--grey1);}
-  .m-maand{width:46px;font-weight:700;color:var(--dark);flex-shrink:0;}
-  .m-buy{width:64px;color:var(--blue);text-align:right;flex-shrink:0;}
-  .m-vint{width:64px;color:var(--vint);text-align:right;flex-shrink:0;}
-  .m-winst{width:64px;text-align:right;font-weight:700;flex-shrink:0;}
-  .m-pct{flex:1;text-align:right;color:var(--greyt);font-size:10px;}
-
-  /* LIST ROWS — swipe-to-delete style with delete button */
-  .list-item{position:relative;display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid var(--grey2);font-size:12px;background:var(--white);transition:background .15s;}
-  .list-item:last-child{border-bottom:none;}
-  .list-item.alt{background:var(--grey1);}
-  .list-item-body{flex:1;min-width:0;}
-  .li-top{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
-  .li-date{font-size:10px;color:var(--greyt);flex-shrink:0;}
-  .li-art{font-size:12px;color:var(--dark);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .li-bottom{display:flex;align-items:center;gap:6px;}
-  .li-maat{font-size:10px;color:var(--purp);font-weight:600;}
-  .li-qty{font-size:10px;color:var(--org);font-weight:700;}
-  .li-amt{font-size:14px;font-weight:800;flex-shrink:0;margin-left:8px;}
-  .li-amt.blue{color:var(--blue);}
-  .li-amt.teal{color:var(--vint);}
-  .del-btn{width:34px;height:34px;border:none;background:var(--red-lt);color:var(--red);border-radius:8px;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-left:8px;font-weight:700;}
-  .del-btn:active{background:#fecaca;}
-
-  /* BADGE */
-  .badge{display:inline-block;padding:1px 6px;border-radius:20px;font-size:9px;font-weight:700;}
-  .b-Schoenen{background:#EBF2FF;color:var(--blue);}
-  .b-Kleding{background:#F0EBFF;color:var(--purp);}
-  .b-Voetbalshirts{background:#E6F9FA;color:var(--teal);}
-  .b-Tassen{background:#FFF0EB;color:var(--org);}
-  .b-Accessoires{background:#EAFAF3;color:var(--grn);}
-  .b-Overige{background:#FFF0F4;color:var(--pink);}
-
-  /* FORMS */
-  .form-card{background:var(--white);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
-  .form-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--grey2);}
-  .form-row{margin-bottom:10px;}
-  .form-row label{display:block;font-size:11px;font-weight:600;color:var(--mid);margin-bottom:4px;}
-  .form-row input,.form-row select{width:100%;padding:10px 11px;border:1.5px solid var(--grey2);border-radius:8px;font-size:14px;color:var(--dark);background:var(--bg);outline:none;-webkit-appearance:none;}
-  .form-row input:focus,.form-row select:focus{border-color:var(--blue);background:var(--white);}
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .btn{width:100%;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;}
-  .btn-blue{background:var(--blue);color:white;}
-  .btn-teal{background:var(--vint);color:white;}
-  .btn-red{background:var(--red-lt);color:var(--red);font-size:12px;padding:10px;margin-top:8px;}
-  .btn:active{opacity:.85;}
-
-  /* SETTING */
-  .setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--white);border-radius:10px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
-  .setting-input{width:100px;padding:7px 9px;border:1.5px solid var(--grey2);border-radius:7px;font-size:14px;text-align:right;color:var(--blue);font-weight:700;background:var(--bg);}
-
-  /* MODAL */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center;}
-  .modal-overlay.open{display:flex;}
-  .modal{background:var(--white);border-radius:20px 20px 0 0;padding:20px 16px 30px;width:100%;max-width:480px;}
-  .modal-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:6px;}
-  .modal-sub{font-size:13px;color:var(--greyt);margin-bottom:16px;}
-  .modal-btns{display:flex;gap:10px;}
-  .modal-btns .btn{flex:1;}
-
-  /* TOAST */
-  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:white;padding:10px 22px;border-radius:20px;font-size:13px;font-weight:600;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
-  .toast.show{opacity:1;}
-
-  /* SEARCH */
-  .search-bar{width:100%;padding:9px 12px;border:1.5px solid var(--grey2);border-radius:10px;font-size:13px;background:var(--white);margin-bottom:10px;outline:none;}
-  .search-bar:focus{border-color:var(--blue);}
-
-  .hdr-row{background:var(--navy);color:white;font-size:10px;font-weight:700;padding:8px 12px;display:flex;gap:8px;}
+  .kpi-label{font-size:9px;font-weight:700;color:var(--greyt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+  .kpi-value{font-size:22px;font-weight:800;color:var(--navy);letter-spacing:-.3px;}
+  .kpi-value.pos{color:var(--grn);}
+  .kpi-value.neg{color:var(--red);}
+  .kpi-sub{font-size:10px;color:var(--greyt);margin-top:3px;}
+  .chart-card{background:var(--white);border-radius:12px;padding:14px;box-shadow:0 1px 6px rgba(0,0,0,.06);margin-bottom:14px;}
+  .chart-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px;letter-spacing:.2px;}
+  .chart-wrap{position:relative;height:200px;}
+  .chart-wrap.small{height:180px;}
+  .section-title{font-size:13px;font-weight:800;color:var(--navy);margin:16px 4px 8px;display:flex;justify-content:space-between;align-items:baseline;letter-spacing:.2px;}
+  .section-title .count{font-size:10px;color:var(--greyt);font-weight:600;}
+  .filter-bar{background:var(--white);border-radius:12px;padding:10px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+  .filter-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .filter-row + .filter-row{margin-top:8px;}
+  .filter-label{font-size:9px;font-weight:700;color:var(--greyt);text-transform:uppercase;letter-spacing:.5px;width:100%;margin-bottom:4px;}
+  .chip{padding:6px 11px;background:var(--grey1);border:1px solid var(--grey2);border-radius:16px;color:var(--mid);font-size:11px;font-weight:600;cursor:pointer;transition:all .12s;white-space:nowrap;font-family:inherit;}
+  .chip.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .chip:active{transform:scale(.95);}
+  .search-input{flex:1;min-width:180px;padding:9px 12px;background:var(--grey1);border:1px solid var(--grey2);border-radius:8px;color:var(--navy);font-size:12px;outline:none;font-family:inherit;}
+  .search-input::placeholder{color:var(--greyt);}
+  .search-input:focus{border-color:var(--blue);background:#fff;}
+  .list-card{background:var(--white);border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.06);overflow:hidden;margin-bottom:14px;}
+  .row{display:grid;padding:11px 13px;border-bottom:1px solid var(--grey1);gap:8px;align-items:center;font-size:12px;grid-template-columns:1fr auto auto;}
+  .row:last-child{border-bottom:none;}
+  .row .name{font-weight:700;color:var(--navy);font-size:12.5px;}
+  .row .meta{font-size:10px;color:var(--greyt);margin-top:2px;letter-spacing:.1px;}
+  .row .price{font-weight:800;color:var(--navy);font-size:13px;text-align:right;}
+  .row .price.pos{color:var(--grn);}
+  .row .price.neg{color:var(--red);}
+  .row .price-sub{font-size:9px;color:var(--greyt);text-align:right;margin-top:1px;font-weight:500;}
+  .actions{display:flex;gap:4px;}
+  .icon-btn{width:28px;height:28px;border-radius:6px;background:var(--grey1);border:1px solid var(--grey2);color:var(--mid);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;padding:0;}
+  .icon-btn.edit:active{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .icon-btn.del{color:var(--red);border-color:#fecaca;}
+  .icon-btn.del:active{background:var(--red);color:#fff;}
+  .badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-left:4px;vertical-align:middle;}
+  .b-shoe{background:#ede9fe;color:#6d28d9;}
+  .b-cloth{background:#ffedd5;color:#c2410c;}
+  .b-acc{background:#cffafe;color:#0e7490;}
+  .b-foot{background:#fee2e2;color:#b91c1c;}
+  .b-bag{background:#fce7f3;color:#9f1239;}
+  .b-other{background:#e0e7ff;color:#3730a3;}
+  .b-qty{background:#dbeafe;color:#1d4ed8;margin-left:6px;}
+  .mrow{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;padding:10px 13px;border-bottom:1px solid var(--grey1);gap:6px;font-size:11px;align-items:center;}
+  .mrow:last-child{border-bottom:none;}
+  .mrow.head{background:var(--grey1);font-size:9px;font-weight:700;color:var(--greyt);text-transform:uppercase;letter-spacing:.5px;}
+  .mrow .mn{font-weight:700;color:var(--navy);}
+  .mrow .mv{text-align:right;font-weight:700;}
+  .empty{text-align:center;padding:40px 20px;color:var(--greyt);}
+  .empty .big{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+  .empty .sub{font-size:11px;}
+  .fab{position:fixed;bottom:80px;right:16px;width:52px;height:52px;background:var(--blue);color:#fff;border:none;border-radius:50%;font-size:26px;font-weight:300;cursor:pointer;box-shadow:0 6px 18px rgba(79,142,247,.4);z-index:50;display:flex;align-items:center;justify-content:center;}
+  .fab:active{transform:scale(.92);}
+  .modal-bg{position:fixed;inset:0;background:rgba(30,42,74,.5);backdrop-filter:blur(4px);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+  .modal-bg.show{display:flex;animation:fadeIn .2s;}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal{background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;padding:18px;animation:slideUp .3s cubic-bezier(.2,.9,.3,1);}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .modal h2{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px;}
+  .fg{margin-bottom:12px;}
+  .fg label{display:block;font-size:9px;font-weight:700;color:var(--greyt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+  .fg input,.fg select{width:100%;padding:10px 12px;background:var(--grey1);border:1px solid var(--grey2);border-radius:8px;color:var(--navy);font-size:13px;outline:none;font-family:inherit;}
+  .fg input:focus,.fg select:focus{border-color:var(--blue);background:#fff;}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .btn-primary,.btn-secondary,.btn-danger{padding:11px 16px;border:none;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;cursor:pointer;font-family:inherit;}
+  .btn-primary{background:var(--blue);color:#fff;flex:1;}
+  .btn-secondary{background:var(--grey1);color:var(--mid);border:1px solid var(--grey2);}
+  .btn-danger{background:#fff;border:1px solid var(--red);color:var(--red);width:100%;}
+  .btn-primary:active,.btn-secondary:active,.btn-danger:active{transform:scale(.97);}
+  .brow{display:flex;gap:10px;margin-top:16px;}
+  .confirm-bg{position:fixed;inset:0;background:rgba(30,42,74,.6);backdrop-filter:blur(4px);z-index:250;display:none;align-items:center;justify-content:center;padding:20px;}
+  .confirm-bg.show{display:flex;}
+  .confirm{background:#fff;border-radius:14px;max-width:340px;width:100%;padding:20px;text-align:center;}
+  .confirm h3{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px;}
+  .confirm p{font-size:12px;color:var(--mid);margin-bottom:16px;line-height:1.5;}
+  .confirm .brow{margin-top:0;}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--navy);color:#fff;padding:11px 18px;border-radius:10px;font-size:12px;z-index:300;transition:transform .3s;box-shadow:0 6px 18px rgba(0,0,0,.2);font-weight:600;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .s-card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+  .s-card h3{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:10px;}
+  .s-card p{font-size:11px;color:var(--mid);margin-bottom:10px;line-height:1.5;}
+  .info{font-size:10px;color:var(--greyt);padding:8px 12px;background:var(--grey1);border-radius:6px;margin-bottom:12px;line-height:1.5;}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>◆ RESELL DASHBOARD</h1>
-  <p>Basetao inkoop · Vinted verkopen · Live winst bijgewerkt</p>
+  <h1>RESELL DASHBOARD</h1>
+  <p>Basetao &rarr; Vinted &middot; <span id="today"></span></p>
 </div>
 
-<!-- PAGES -->
-<div id="page-overview" class="page active">
-  <div class="kpi-grid" id="kpi-grid"></div>
-  <div class="chart-wrap">
-    <div class="chart-title">Inkoop vs Vinted per maand (€)</div>
-    <canvas id="barChart" height="210"></canvas>
+<div class="page active" id="page-overview">
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Omzet</div><div class="kpi-value pos" id="kpi-rev">&euro;0</div><div class="kpi-sub" id="kpi-rev-sub">0 verkopen</div></div>
+    <div class="kpi-card org"><div class="kpi-label">Kosten</div><div class="kpi-value" id="kpi-cost">&euro;0</div><div class="kpi-sub" id="kpi-cost-sub">0 stuks</div></div>
+    <div class="kpi-card grn"><div class="kpi-label">Winst</div><div class="kpi-value" id="kpi-prof">&euro;0</div><div class="kpi-sub" id="kpi-prof-sub">&mdash;</div></div>
+    <div class="kpi-card yel"><div class="kpi-label">Verzendkosten</div><div class="kpi-value" id="kpi-ship">&euro;0</div><div class="kpi-sub" id="kpi-ship-sub">Basetao totaal</div></div>
   </div>
-  <div class="chart-wrap">
-    <div class="chart-title">Verdeling Vinted verkopen per categorie</div>
-    <canvas id="pieChart" height="210"></canvas>
+  <div class="chart-card">
+    <div class="chart-title">Per maand &middot; Inkoop vs Verkoop</div>
+    <div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Verkopen per categorie</div>
+    <div class="chart-wrap small"><canvas id="chart-donut"></canvas></div>
   </div>
 </div>
 
-<div id="page-maanden" class="page">
-  <div class="section-title">Maandoverzicht <span class="section-sub">inkoop · vinted · winst</span></div>
-  <div class="table-wrap">
-    <div class="month-row hdr">
-      <div class="m-maand">Maand</div>
-      <div class="m-buy">Inkoop</div>
-      <div class="m-vint">Vinted</div>
-      <div class="m-winst">Winst</div>
-      <div class="m-pct">%</div>
+<div class="page" id="page-months">
+  <div class="section-title">Maandoverzicht <span class="count" id="mcount">&mdash;</span></div>
+  <div class="list-card">
+    <div class="mrow head"><div>Maand</div><div class="mv">Kosten</div><div class="mv">Verkoop</div><div class="mv">Winst</div></div>
+    <div id="mrows"></div>
+  </div>
+</div>
+
+<div class="page" id="page-purchases">
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="filter-label">Categorie</div>
+      <button class="chip active" onclick="setPur('all',this)" data-f="all">Alles</button>
+      <button class="chip" onclick="setPur('Schoenen',this)" data-f="Schoenen">Schoenen</button>
+      <button class="chip" onclick="setPur('Kleding',this)" data-f="Kleding">Kleding</button>
+      <button class="chip" onclick="setPur('Voetbalshirts',this)" data-f="Voetbalshirts">Voetbalshirts</button>
+      <button class="chip" onclick="setPur('Tassen',this)" data-f="Tassen">Tassen</button>
+      <button class="chip" onclick="setPur('Accessoires',this)" data-f="Accessoires">Accessoires</button>
+      <button class="chip" onclick="setPur('Overige',this)" data-f="Overige">Overige</button>
     </div>
-    <div id="maand-rows"></div>
-  </div>
-</div>
-
-<div id="page-inkoop" class="page">
-  <div class="section-title">
-    Inkoop <span class="section-sub" id="inkoop-count"></span>
-  </div>
-  <input class="search-bar" type="search" placeholder="🔍 Zoek artikel..." id="inkoop-search" oninput="renderInkoop()">
-  <div id="inkoop-list"></div>
-</div>
-
-<div id="page-vinted" class="page">
-  <div class="section-title">
-    Vinted <span class="section-sub" id="vinted-count"></span>
-  </div>
-  <input class="search-bar" type="search" placeholder="🔍 Zoek artikel..." id="vinted-search" oninput="renderVinted()">
-  <div id="vinted-list"></div>
-</div>
-
-<div id="page-add" class="page">
-  <!-- VINTED -->
-  <div class="form-card">
-    <div class="form-title">💰 Vinted verkoop toevoegen</div>
-    <div class="form-row"><label>Datum</label><input type="date" id="v-datum"></div>
-    <div class="form-grid">
-      <div class="form-row">
-        <label>Categorie</label>
-        <select id="v-cat"><option>Schoenen</option><option>Kleding</option><option>Tassen</option><option>Accessoires</option><option>Overige</option></select>
-      </div>
-      <div class="form-row"><label>Opbrengst €</label><input type="number" id="v-eur" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+    <div class="filter-row">
+      <input type="text" class="search-input" id="pur-search" placeholder="Zoek product..." oninput="renderPur()">
     </div>
-    <div class="form-row"><label>Artikel / Omschrijving</label><input type="text" id="v-art" placeholder="bijv. Samba OG Maroon"></div>
-    <button class="btn btn-teal" onclick="addVinted()">✓ Verkoop toevoegen</button>
   </div>
+  <div class="list-card" id="pur-table"></div>
+</div>
 
-  <!-- INKOOP -->
-  <div class="form-card">
-    <div class="form-title">📥 Inkoop toevoegen</div>
-    <div class="form-row"><label>Datum</label><input type="date" id="i-datum"></div>
-    <div class="form-grid">
-      <div class="form-row">
-        <label>Categorie</label>
-        <select id="i-cat"><option>Schoenen</option><option>Kleding</option><option>Voetbalshirts</option><option>Tassen</option><option>Accessoires</option><option>Overige</option></select>
-      </div>
-      <div class="form-row">
-        <label>Platform</label>
-        <select id="i-plat"><option>Basetao</option><option>Pandabuy</option><option>Sugargoo</option><option>Cssbuy</option><option>Andere</option></select>
-      </div>
+<div class="page" id="page-sales">
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="filter-label">Categorie</div>
+      <button class="chip active" onclick="setSal('all',this)" data-f="all">Alles</button>
+      <button class="chip" onclick="setSal('Schoenen',this)" data-f="Schoenen">Schoenen</button>
+      <button class="chip" onclick="setSal('Kleding',this)" data-f="Kleding">Kleding</button>
+      <button class="chip" onclick="setSal('Voetbalshirts',this)" data-f="Voetbalshirts">Voetbalshirts</button>
+      <button class="chip" onclick="setSal('Tassen',this)" data-f="Tassen">Tassen</button>
+      <button class="chip" onclick="setSal('Accessoires',this)" data-f="Accessoires">Accessoires</button>
     </div>
-    <div class="form-row"><label>Artikel / Omschrijving</label><input type="text" id="i-art" placeholder="bijv. Samba OG Maroon"></div>
-    <div class="form-grid">
-      <div class="form-row"><label>Maat</label><input type="text" id="i-maat" placeholder="bijv. 39, S, M"></div>
-      <div class="form-row"><label>Aantal</label><input type="number" id="i-qty" value="1" min="1" inputmode="numeric"></div>
+    <div class="filter-row">
+      <input type="text" class="search-input" id="sal-search" placeholder="Zoek product..." oninput="renderSal()">
     </div>
-    <div class="form-row"><label>Prijs per stuk (¥)</label><input type="number" id="i-prijs" placeholder="0.00" step="0.01" inputmode="decimal"></div>
-    <button class="btn btn-blue" onclick="addInkoop()">✓ Inkoop toevoegen</button>
   </div>
+  <div class="list-card" id="sal-table"></div>
+</div>
 
-  <!-- SETTINGS -->
-  <div class="form-card">
-    <div class="form-title">⚙️ Instellingen</div>
-    <div class="setting-row">
-      <div>
-        <div style="font-size:13px;font-weight:600;color:var(--dark)">Wisselkoers</div>
-        <div style="font-size:10px;color:var(--greyt)">1 CNY = ? euro</div>
-      </div>
-      <input class="setting-input" type="number" id="eur-rate" step="0.00001" inputmode="decimal">
-    </div>
-    <button class="btn btn-blue" onclick="saveRate()">Wisselkoers opslaan</button>
-    <button class="btn btn-red" onclick="confirmReset()" style="margin-top:10px">⚠️ Alles resetten naar standaard</button>
+<div class="page" id="page-settings">
+  <div class="s-card">
+    <h3>Wisselkoers CNY &rarr; EUR</h3>
+    <div class="fg"><label>1 CNY = ... EUR</label><input type="number" step="0.00001" id="rate-input"></div>
+    <button class="btn-primary" onclick="saveRate()" style="width:100%;">Opslaan</button>
+  </div>
+  <div class="s-card">
+    <h3>Verzendkosten Basetao</h3>
+    <p>Totale forwarding fee die al is betaald (los van stukprijzen). Wordt meegeteld in Kosten &amp; Winst.</p>
+    <div class="fg"><label>Huidig totaal (CNY)</label><input type="number" step="0.01" id="hist-ship-input"></div>
+    <button class="btn-primary" onclick="saveHistShip()" style="width:100%;margin-bottom:10px;">Totaal opslaan</button>
+    <div class="fg" style="margin-top:12px;border-top:1px solid var(--grey1);padding-top:12px;"><label>Nieuwe verzendkosten toevoegen (CNY)</label><input type="number" step="0.01" id="add-ship-input" placeholder="bv. 250.00"></div>
+    <button class="btn-secondary" onclick="addShipCost()" style="width:100%;">+ Toevoegen bij totaal</button>
+  </div>
+  <div class="s-card">
+    <h3>Export</h3>
+    <p>Download alle data als CSV voor Excel/belastingaangifte, of als HTML-rapport.</p>
+    <button class="btn-secondary" onclick="exportCSV()" style="width:100%;margin-bottom:8px;">Download CSV</button>
+    <button class="btn-secondary" onclick="exportHTML()" style="width:100%;margin-bottom:8px;">Download HTML rapport</button>
+    <button class="btn-secondary" onclick="exportJSON()" style="width:100%;">Download JSON backup</button>
+  </div>
+  <div class="s-card">
+    <h3>Import JSON</h3>
+    <button class="btn-secondary" onclick="document.getElementById('imp').click()" style="width:100%;">Importeer JSON</button>
+    <input type="file" id="imp" accept=".json" style="display:none" onchange="importJSON(event)">
+  </div>
+  <div class="s-card">
+    <h3>Reset</h3>
+    <button class="btn-danger" onclick="clearAll()">Wis alle data</button>
   </div>
 </div>
 
-<!-- BOTTOM NAV -->
-<div class="bottom-nav">
-  <div class="tab active" onclick="showPage('overview',this)"><div class="tab-icon">📊</div>Overview</div>
-  <div class="tab" onclick="showPage('maanden',this)"><div class="tab-icon">📅</div>Maanden</div>
-  <div class="tab" onclick="showPage('inkoop',this)"><div class="tab-icon">📥</div>Inkoop</div>
-  <div class="tab" onclick="showPage('vinted',this)"><div class="tab-icon">💰</div>Vinted</div>
-  <div class="tab" onclick="showPage('add',this)"><div class="tab-icon">➕</div>Toevoegen</div>
-</div>
+<button class="fab" onclick="openModal()">+</button>
 
-<!-- DELETE MODAL -->
-<div class="modal-overlay" id="modal">
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
-    <div class="modal-title" id="modal-title">Regel verwijderen?</div>
-    <div class="modal-sub" id="modal-sub"></div>
-    <div class="modal-btns">
-      <button class="btn btn-red" onclick="confirmDelete()">🗑 Verwijderen</button>
-      <button class="btn" style="background:var(--grey2);color:var(--dark)" onclick="closeModal()">Annuleren</button>
+    <h2 id="modal-title">Nieuwe invoer</h2>
+    <div class="fg">
+      <label>Type</label>
+      <select id="m-type" onchange="onTypeChange()">
+        <option value="inkoop">Inkoop (Basetao, CNY)</option>
+        <option value="vinted">Verkoop (Vinted, EUR)</option>
+      </select>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Datum</label><input type="date" id="m-date"></div>
+      <div class="fg">
+        <label>Categorie</label>
+        <select id="m-cat">
+          <option>Schoenen</option><option>Kleding</option><option>Voetbalshirts</option><option>Tassen</option><option>Accessoires</option><option>Overige</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label>Product</label><input type="text" id="m-name" placeholder="bv. Samba OG Maroon"></div>
+    <div class="frow" id="size-qty-row">
+      <div class="fg"><label>Maat</label><input type="text" id="m-size" placeholder="39F"></div>
+      <div class="fg" id="qty-wrap"><label>Aantal</label><input type="number" id="m-qty" value="1" min="1"></div>
+    </div>
+    <div class="fg"><label id="m-price-label">Prijs per stuk (CNY)</label><input type="number" step="0.01" id="m-price"></div>
+    <div class="brow">
+      <button class="btn-secondary" onclick="closeModal()">Annuleer</button>
+      <button class="btn-primary" onclick="saveEntry()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-bg" id="confirm" onclick="if(event.target===this)closeConfirm()">
+  <div class="confirm">
+    <h3 id="c-title">Verwijderen?</h3>
+    <p id="c-msg">Deze regel wordt permanent verwijderd.</p>
+    <div class="brow">
+      <button class="btn-secondary" onclick="closeConfirm()" style="flex:1;">Annuleer</button>
+      <button class="btn-primary" onclick="doConfirm()" style="background:var(--red);">Verwijder</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
+<div class="bottom-nav">
+  <button class="tab active" onclick="show('overview',this)"><div class="tab-icon">&#9670;</div>Overzicht</button>
+  <button class="tab" onclick="show('months',this)"><div class="tab-icon">&#9638;</div>Maanden</button>
+  <button class="tab" onclick="show('purchases',this)"><div class="tab-icon">&#9660;</div>Inkoop</button>
+  <button class="tab" onclick="show('sales',this)"><div class="tab-icon">&#9650;</div>Vinted</button>
+  <button class="tab" onclick="show('settings',this)"><div class="tab-icon">&#9881;</div>Instel.</button>
+</div>
+
 <script>
-// ═══════════════════ DEFAULT DATA ═══════════════════
-const DEFAULT_RATE = 0.12441;
-const DEFAULT_INKOOP = [
+// Inkoop: [date, cat, supplier, name, size, qty, price_cny]
+const SEED_PURCHASES = [
   ["2026-02-28","Voetbalshirts","Basetao","Nederland 1998 LS","S",3,57.00],
   ["2026-02-28","Voetbalshirts","Basetao","Nederland 1998 LS","M",3,57.00],
   ["2026-02-26","Schoenen","Basetao","Samba OG","39F",1,270.00],
@@ -373,359 +390,468 @@ const DEFAULT_INKOOP = [
   ["2025-01-17","Schoenen","Basetao","Nike P-6000 Iron Ore","EU44.5",1,200.00],
 ];
 
-const DEFAULT_VINTED = [
-  ["2025-01-28","Schoenen","Samba",65.00],
-  ["2025-02-05","Kleding","",35.00],
-  ["2025-02-10","Schoenen","Samba",75.00],
-  ["2025-02-15","Schoenen","Samba",160.00],
-  ["2025-02-15","Schoenen","Miu Miu x New Balance",170.00],
-  ["2025-02-24","Kleding","",20.00],
-  ["2025-03-13","Schoenen","Samba",150.00],
-  ["2025-03-13","Schoenen","Samba",126.00],
-  ["2025-03-15","Schoenen","Samba",120.00],
-  ["2025-03-15","Schoenen","Samba",120.00],
-  ["2025-03-26","Schoenen","Samba",65.00],
-  ["2025-03-29","Schoenen","",42.50],
-  ["2025-03-30","Schoenen","",65.00],
-  ["2025-04-01","Schoenen","",60.00],
-  ["2025-04-04","Schoenen","",55.00],
-  ["2025-04-05","Schoenen","",58.00],
-  ["2025-04-08","Schoenen","",50.00],
-  ["2025-04-08","Schoenen","",52.00],
-  ["2025-04-09","Schoenen","",50.00],
-  ["2025-04-10","Schoenen","",70.00],
-  ["2025-04-11","Schoenen","",50.00],
-  ["2025-04-12","Schoenen","",95.00],
-  ["2025-04-13","Kleding","",30.00],
-  ["2025-04-14","Schoenen","Samba Wales Bonner",140.00],
-  ["2025-04-17","Schoenen","",95.00],
-  ["2025-04-17","Kleding","",25.00],
-  ["2025-04-24","Schoenen","",115.00],
-  ["2025-05-12","Kleding","",20.00],
-  ["2025-05-14","Schoenen","",60.00],
-  ["2025-05-19","Schoenen","",95.00],
-  ["2025-05-20","Schoenen","",110.00],
-  ["2025-05-23","Schoenen","",99.00],
-  ["2025-05-24","Schoenen","",55.00],
-  ["2025-05-25","Schoenen","",100.00],
-  ["2025-05-28","Kleding","",47.00],
-  ["2025-05-30","Schoenen","",60.00],
-  ["2025-06-01","Kleding","",45.00],
-  ["2025-06-04","Schoenen","",49.00],
-  ["2025-06-05","Schoenen","",95.00],
-  ["2025-06-06","Kleding","",65.00],
-  ["2025-06-06","Schoenen","",115.00],
-  ["2025-06-10","Schoenen","",125.00],
-  ["2025-06-11","Schoenen","",80.00],
-  ["2025-06-16","Schoenen","",110.00],
-  ["2025-07-09","Schoenen","",80.00],
-  ["2025-07-09","Schoenen","",110.00],
-  ["2025-07-11","Schoenen","",50.00],
-  ["2025-07-11","Schoenen","",90.00],
-  ["2025-07-11","Schoenen","",125.00],
-  ["2025-07-11","Schoenen","",67.50],
-  ["2025-07-11","Schoenen","",80.00],
-  ["2025-07-14","Schoenen","",55.00],
-  ["2025-07-14","Schoenen","",105.00],
-  ["2025-07-16","Schoenen","",55.00],
-  ["2025-07-17","Schoenen","",65.00],
-  ["2025-07-18","Schoenen","",50.00],
-  ["2025-07-18","Schoenen","",75.00],
-  ["2025-07-19","Schoenen","",55.00],
-  ["2025-07-28","Schoenen","Samba Wales Bonner",160.00],
-  ["2025-08-27","Schoenen","",103.50],
-  ["2025-08-27","Schoenen","Samba Wales Bonner",160.00],
-  ["2025-09-10","Schoenen","",45.00],
-  ["2025-09-18","Schoenen","",110.00],
-  ["2026-01-13","Schoenen","Miu Miu x New Balance",170.00],
-  ["2026-01-14","Schoenen","Samba Wales Bonner",144.00],
-  ["2026-01-15","Schoenen","Nike Air Force",20.00],
-  ["2026-01-29","Kleding","Miu Miu Muts",36.00],
-  ["2026-01-29","Schoenen","Samba OG Earth Strata",105.00],
-  ["2026-01-30","Kleding","Miu Miu Muts",35.00],
-  ["2026-02-04","Schoenen","Samba OG Earth Strata",80.00],
-  ["2026-02-13","Schoenen","Adidas Samba Maroon",75.00],
-  ["2026-02-13","Kleding","Adidas Leopard Wide Pants",45.00],
-  ["2026-02-24","Schoenen","Samba OG Earth Strata",88.00],
-  ["2026-02-24","Schoenen","Samba OG Earth Strata",70.00],
-  ["2026-02-24","Schoenen","Samba OG Maroon Gold Metallic",80.00],
-  ["2026-04-10","Kleding","Arte T-shirt",35.00],
-  ["2026-04-11","Kleding","Arte Broek",65.00],
-  ["2026-04-15","Schoenen","Stussy x Nike NL T-shirt Koningsdag",43.00],
-  ["2026-04-15","Kleding","Stussy x Nike Tshirt Koningsdag",25.00],
-  ["2026-04-15","Kleding","Arte T-shirt",38.00],
-  ["2026-04-17","Kleding","Arte T-shirt",35.00],
-  ["2026-04-17","Kleding","Nike x Stussy Shirt Koningsdag",45.00],
-  ["2026-04-19","Kleding","Nike x Stussy Inter Milan Shirt Koningsdag",45.00],
+const SEED_SALES = [
+  ["2025-01-28","Schoenen","Samba",65.00],["2025-02-05","Kleding","",35.00],["2025-02-10","Schoenen","Samba",75.00],
+  ["2025-02-15","Schoenen","Samba",160.00],["2025-02-15","Schoenen","Miu Miu x New Balance",170.00],["2025-02-24","Kleding","",20.00],
+  ["2025-03-13","Schoenen","Samba",150.00],["2025-03-13","Schoenen","Samba",126.00],["2025-03-15","Schoenen","Samba",120.00],
+  ["2025-03-15","Schoenen","Samba",120.00],["2025-03-26","Schoenen","Samba",65.00],["2025-03-29","Schoenen","",42.50],
+  ["2025-03-30","Schoenen","",65.00],["2025-04-01","Schoenen","",60.00],["2025-04-04","Schoenen","",55.00],
+  ["2025-04-05","Schoenen","",58.00],["2025-04-08","Schoenen","",50.00],["2025-04-08","Schoenen","",52.00],
+  ["2025-04-09","Schoenen","",50.00],["2025-04-10","Schoenen","",70.00],["2025-04-11","Schoenen","",50.00],
+  ["2025-04-12","Schoenen","",95.00],["2025-04-13","Kleding","",30.00],["2025-04-14","Schoenen","Samba Wales Bonner",140.00],
+  ["2025-04-17","Schoenen","",95.00],["2025-04-17","Kleding","",25.00],["2025-04-24","Schoenen","",115.00],
+  ["2025-05-12","Kleding","",20.00],["2025-05-14","Schoenen","",60.00],["2025-05-19","Schoenen","",95.00],
+  ["2025-05-20","Schoenen","",110.00],["2025-05-23","Schoenen","",99.00],["2025-05-24","Schoenen","",55.00],
+  ["2025-05-25","Schoenen","",100.00],["2025-05-28","Kleding","",47.00],["2025-05-30","Schoenen","",60.00],
+  ["2025-06-01","Kleding","",45.00],["2025-06-04","Schoenen","",49.00],["2025-06-05","Schoenen","",95.00],
+  ["2025-06-06","Kleding","",65.00],["2025-06-06","Schoenen","",115.00],["2025-06-10","Schoenen","",125.00],
+  ["2025-06-11","Schoenen","",80.00],["2025-06-16","Schoenen","",110.00],["2025-07-09","Schoenen","",80.00],
+  ["2025-07-09","Schoenen","",110.00],["2025-07-11","Schoenen","",50.00],["2025-07-11","Schoenen","",90.00],
+  ["2025-07-11","Schoenen","",125.00],["2025-07-11","Schoenen","",67.50],["2025-07-11","Schoenen","",80.00],
+  ["2025-07-14","Schoenen","",55.00],["2025-07-14","Schoenen","",105.00],["2025-07-16","Schoenen","",55.00],
+  ["2025-07-17","Schoenen","",65.00],["2025-07-18","Schoenen","",50.00],["2025-07-18","Schoenen","",75.00],
+  ["2025-07-19","Schoenen","",55.00],["2025-07-28","Schoenen","Samba Wales Bonner",160.00],["2025-08-27","Schoenen","",103.50],
+  ["2025-08-27","Schoenen","Samba Wales Bonner",160.00],["2025-09-10","Schoenen","",45.00],["2025-09-18","Schoenen","",110.00],
+  ["2026-01-13","Schoenen","Miu Miu x New Balance",170.00],["2026-01-14","Schoenen","Samba Wales Bonner",144.00],
+  ["2026-01-15","Schoenen","Nike Air Force",20.00],["2026-01-29","Kleding","Miu Miu Muts",36.00],
+  ["2026-01-29","Schoenen","Samba OG Earth Strata",105.00],["2026-01-30","Kleding","Miu Miu Muts",35.00],
+  ["2026-02-04","Schoenen","Samba OG Earth Strata",80.00],["2026-02-13","Schoenen","Adidas Samba Maroon",75.00],
+  ["2026-02-13","Kleding","Adidas Leopard Wide Pants",45.00],["2026-02-24","Schoenen","Samba OG Earth Strata",88.00],
+  ["2026-02-24","Schoenen","Samba OG Earth Strata",70.00],["2026-02-24","Schoenen","Samba OG Maroon Gold Metallic",80.00],
+  ["2026-04-10","Kleding","Arte T-shirt",35.00],["2026-04-11","Kleding","Arte Broek",65.00],
+  ["2026-04-15","Schoenen","Stussy x Nike NL T-shirt Koningsdag",43.00],["2026-04-15","Kleding","Stussy x Nike Tshirt Koningsdag",25.00],
+  ["2026-04-15","Kleding","Arte T-shirt",38.00],["2026-04-17","Kleding","Arte T-shirt",35.00],
+  ["2026-04-17","Kleding","Nike x Stussy Shirt Koningsdag",45.00],["2026-04-19","Kleding","Nike x Stussy Inter Milan Shirt Koningsdag",45.00],
 ];
 
-// ═══════════════════ STATE ═══════════════════
-function loadData() {
+const KEY = 'resell_dashboard_v6';
+const DEFAULT_RATE = 0.12441;
+const DEFAULT_HIST_SHIP_CNY = 5814.24; // totale historische Basetao verzendkosten
+
+function tuplesToPurchases(arr) {
+  return arr.map(r => ({date:r[0], cat:r[1], supplier:r[2], name:r[3], size:r[4], qty:r[5], price:r[6], ship:0}));
+}
+function tuplesToSales(arr) {
+  return arr.map(r => ({date:r[0], cat:r[1], name:r[2], price:r[3]}));
+}
+
+function load(){
+  try{
+    const r = localStorage.getItem(KEY);
+    if (r) return JSON.parse(r);
+  }catch(e){}
   return {
-    rate: parseFloat(localStorage.getItem('rdb_rate') || DEFAULT_RATE),
-    inkoop: JSON.parse(localStorage.getItem('rdb_inkoop') || 'null') || JSON.parse(JSON.stringify(DEFAULT_INKOOP)),
-    vinted: JSON.parse(localStorage.getItem('rdb_vinted') || 'null') || JSON.parse(JSON.stringify(DEFAULT_VINTED)),
+    purchases: tuplesToPurchases(SEED_PURCHASES),
+    sales: tuplesToSales(SEED_SALES),
+    rate: DEFAULT_RATE,
+    histShipCny: DEFAULT_HIST_SHIP_CNY
   };
 }
-function saveData() {
-  localStorage.setItem('rdb_rate', D.rate);
-  localStorage.setItem('rdb_inkoop', JSON.stringify(D.inkoop));
-  localStorage.setItem('rdb_vinted', JSON.stringify(D.vinted));
-}
-let D = loadData();
+function save(){ localStorage.setItem(KEY, JSON.stringify(DATA)); }
+let DATA = load();
 
-// ═══════════════════ HELPERS ═══════════════════
-const eur = n => '€' + n.toFixed(2).replace('.',',');
-const cny = n => '¥' + Math.round(n).toLocaleString('nl');
-function badge(cat) { return `<span class="badge b-${cat}">${cat}</span>`; }
-function monthlyData() {
-  const m = {};
-  D.inkoop.forEach(r => { const k=r[0].slice(0,7); m[k]=m[k]||{b:0,v:0}; m[k].b+=r[5]*r[6]*D.rate; });
-  D.vinted.forEach(r => { const k=r[0].slice(0,7); m[k]=m[k]||{b:0,v:0}; m[k].v+=r[3]; });
-  return m;
+// Ensure fields exist on older saves
+DATA.purchases.forEach(p => { if (p.ship === undefined) p.ship = 0; });
+if (DATA.histShipCny === undefined) DATA.histShipCny = DEFAULT_HIST_SHIP_CNY;
+
+let purF='all', salF='all';
+let chMonthly=null, chDonut=null;
+
+// Editing state
+let editMode = null; // {type:'inkoop'|'vinted', index:number}
+let confirmAction = null;
+
+const fmt = n => '\u20ac' + Math.round(n).toLocaleString('nl-NL');
+const fmtD = n => '\u20ac' + (Math.round(n*100)/100).toLocaleString('nl-NL', {minimumFractionDigits:2, maximumFractionDigits:2});
+const toEur = cny => cny * DATA.rate;
+const CAT_BADGE = {Schoenen:'b-shoe', Kleding:'b-cloth', Accessoires:'b-acc', Voetbalshirts:'b-foot', Tassen:'b-bag', Overige:'b-other'};
+const catBadge = c => '<span class="badge ' + (CAT_BADGE[c]||'') + '">' + (c||'\u2014') + '</span>';
+
+function totalUnitsCost() {
+  let t = 0;
+  DATA.purchases.forEach(p => { t += toEur(p.price) * (p.qty||1) + toEur(p.ship||0); });
+  t += toEur(DATA.histShipCny||0);
+  return t;
+}
+function totalShipCost() {
+  let t = DATA.purchases.reduce((s,p)=>s+toEur(p.ship||0), 0);
+  t += toEur(DATA.histShipCny||0);
+  return t;
+}
+function totalUnits() {
+  return DATA.purchases.reduce((s,p)=>s+(p.qty||1), 0);
 }
 
-// ═══════════════════ DELETE MODAL ═══════════════════
-let pendingDelete = null;
-function askDelete(type, idx, label) {
-  pendingDelete = { type, idx };
-  document.getElementById('modal-title').textContent = (type==='vinted'?'💰':'📥') + ' Regel verwijderen?';
-  document.getElementById('modal-sub').textContent = label;
-  document.getElementById('modal').classList.add('open');
+function renderOverview() {
+  const totalRev = DATA.sales.reduce((s,v)=>s+v.price, 0);
+  const totalCost = totalUnitsCost();
+  const shipCost = totalShipCost();
+  const profit = totalRev - totalCost;
+
+  document.getElementById('kpi-rev').textContent = fmt(totalRev);
+  document.getElementById('kpi-rev-sub').textContent = DATA.sales.length + ' verkopen';
+  document.getElementById('kpi-cost').textContent = fmt(totalCost);
+  document.getElementById('kpi-cost-sub').textContent = totalUnits() + ' stuks (incl. verzend)';
+  const pEl = document.getElementById('kpi-prof');
+  pEl.textContent = fmt(profit);
+  pEl.className = 'kpi-value ' + (profit>=0?'pos':'neg');
+  const mgn = totalCost>0 ? (profit/totalCost*100) : 0;
+  document.getElementById('kpi-prof-sub').textContent = (mgn>=0?'+':'') + mgn.toFixed(1) + '% marge';
+  document.getElementById('kpi-ship').textContent = fmt(shipCost);
+  document.getElementById('kpi-ship-sub').textContent = '\u00a5' + (DATA.histShipCny||0).toLocaleString('nl-NL', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' totaal';
+
+  const months = {};
+  DATA.purchases.forEach(p => { const k=p.date.slice(0,7); months[k]=months[k]||{ink:0,sel:0}; months[k].ink+=toEur(p.price)*(p.qty||1)+toEur(p.ship||0); });
+  DATA.sales.forEach(v => { const k=v.date.slice(0,7); months[k]=months[k]||{ink:0,sel:0}; months[k].sel+=v.price; });
+  const keys = Object.keys(months).sort();
+  const nlMonths = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  const labels = keys.map(k => { const [y,m]=k.split('-'); return nlMonths[parseInt(m)-1] + ' ' + y.slice(2); });
+  const inkData = keys.map(k => Math.round(months[k].ink));
+  const selData = keys.map(k => Math.round(months[k].sel));
+
+  if (chMonthly) chMonthly.destroy();
+  chMonthly = new Chart(document.getElementById('chart-monthly'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      {label:'Kosten', data:inkData, backgroundColor:'#FF7B54', borderRadius:4},
+      {label:'Verkoop', data:selData, backgroundColor:'#47C98F', borderRadius:4},
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{font:{size:10}, boxWidth:10, color:'#4A5578'}} },
+      scales:{
+        x:{ grid:{display:false}, ticks:{font:{size:9}, color:'#8A94B0'} },
+        y:{ grid:{color:'#F0F2F8'}, ticks:{font:{size:9}, color:'#8A94B0', callback:v=>'\u20ac'+v} }
+      }
+    }
+  });
+
+  const catSales = {};
+  DATA.sales.forEach(v => { catSales[v.cat]=(catSales[v.cat]||0)+v.price; });
+  const cats = Object.keys(catSales);
+  const COLS = {Schoenen:'#7C5CFC', Kleding:'#FF7B54', Accessoires:'#3EC9CF', Voetbalshirts:'#F76B8A', Tassen:'#09B1AA', Overige:'#F5B942'};
+  if (chDonut) chDonut.destroy();
+  chDonut = new Chart(document.getElementById('chart-donut'), {
+    type:'doughnut',
+    data:{ labels:cats, datasets:[{ data:cats.map(c=>Math.round(catSales[c])), backgroundColor:cats.map(c=>COLS[c]||'#8A94B0'), borderWidth:2, borderColor:'#fff' }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'60%',
+      plugins:{ legend:{ position:'right', labels:{font:{size:10}, boxWidth:10, color:'#4A5578', padding:8}} }
+    }
+  });
 }
-function closeModal() {
-  document.getElementById('modal').classList.remove('open');
-  pendingDelete = null;
+
+function renderMonths() {
+  const months = {};
+  DATA.purchases.forEach(p => { const k=p.date.slice(0,7); months[k]=months[k]||{ink:0,sel:0}; months[k].ink+=toEur(p.price)*(p.qty||1)+toEur(p.ship||0); });
+  DATA.sales.forEach(v => { const k=v.date.slice(0,7); months[k]=months[k]||{ink:0,sel:0}; months[k].sel+=v.price; });
+  const keys = Object.keys(months).sort().reverse();
+  document.getElementById('mcount').textContent = keys.length + ' maanden';
+  const nlMonths = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  document.getElementById('mrows').innerHTML = keys.map(k => {
+    const [y,m] = k.split('-');
+    const name = nlMonths[parseInt(m)-1] + ' ' + y;
+    const d = months[k]; const s = d.sel - d.ink;
+    return '<div class="mrow"><div class="mn">' + name + '</div>' +
+      '<div class="mv" style="color:var(--org);">' + fmt(d.ink) + '</div>' +
+      '<div class="mv" style="color:var(--grn);">' + fmt(d.sel) + '</div>' +
+      '<div class="mv" style="color:' + (s>=0?'var(--grn)':'var(--red)') + ';">' + (s>=0?'+':'') + fmt(s) + '</div></div>';
+  }).join('') || '<div class="empty"><div class="sub">Geen data</div></div>';
 }
-function confirmDelete() {
-  if (!pendingDelete) return;
-  if (pendingDelete.type === 'inkoop') D.inkoop.splice(pendingDelete.idx, 1);
-  else D.vinted.splice(pendingDelete.idx, 1);
-  saveData();
-  closeModal();
+
+function setPur(f,el){ purF=f; document.querySelectorAll('#page-purchases [data-f]').forEach(x=>x.classList.remove('active')); el.classList.add('active'); renderPur(); }
+function setSal(f,el){ salF=f; document.querySelectorAll('#page-sales [data-f]').forEach(x=>x.classList.remove('active')); el.classList.add('active'); renderSal(); }
+
+function renderPur() {
+  const q = (document.getElementById('pur-search')?.value||'').toLowerCase();
+  // Build filtered list keeping original indices
+  let f = DATA.purchases.map((p,i)=>({p, i}));
+  if (purF!=='all') f=f.filter(x=>x.p.cat===purF);
+  if (q) f=f.filter(x=>(x.p.name+' '+x.p.size).toLowerCase().includes(q));
+  f.sort((a,b)=>b.p.date.localeCompare(a.p.date));
+  const el = document.getElementById('pur-table');
+  if (!f.length) { el.innerHTML = '<div class="empty"><div class="big">Geen orders</div></div>'; return; }
+  el.innerHTML = f.map(x => {
+    const p = x.p;
+    const qty = p.qty||1;
+    const qtyBadge = qty>1 ? '<span class="badge b-qty">' + qty + 'x</span>' : '';
+    const totalCny = p.price*qty;
+    return '<div class="row">' +
+      '<div><div class="name">' + (p.name||'(geen naam)') + catBadge(p.cat) + qtyBadge + '</div>' +
+      '<div class="meta">' + (p.size||'\u2014') + ' \u00b7 ' + p.date + '</div></div>' +
+      '<div><div class="price">' + fmtD(toEur(totalCny)) + '</div><div class="price-sub">\u00a5' + totalCny.toFixed(2) + '</div></div>' +
+      '<div class="actions"><button class="icon-btn edit" onclick="editEntry(\'inkoop\',' + x.i + ')" title="Bewerk">&#9998;</button>' +
+      '<button class="icon-btn del" onclick="deleteEntry(\'inkoop\',' + x.i + ')" title="Verwijder">&#10005;</button></div>' +
+      '</div>';
+  }).join('');
+}
+
+function renderSal() {
+  const q = (document.getElementById('sal-search')?.value||'').toLowerCase();
+  let f = DATA.sales.map((v,i)=>({v, i}));
+  if (salF!=='all') f=f.filter(x=>x.v.cat===salF);
+  if (q) f=f.filter(x=>(x.v.name||'').toLowerCase().includes(q));
+  f.sort((a,b)=>b.v.date.localeCompare(a.v.date));
+  const el = document.getElementById('sal-table');
+  if (!f.length) { el.innerHTML = '<div class="empty"><div class="big">Geen verkopen</div></div>'; return; }
+  el.innerHTML = f.map(x => {
+    const v = x.v;
+    return '<div class="row">' +
+      '<div><div class="name">' + (v.name||'(geen naam)') + catBadge(v.cat) + '</div>' +
+      '<div class="meta">' + v.date + '</div></div>' +
+      '<div><div class="price pos">' + fmtD(v.price) + '</div></div>' +
+      '<div class="actions"><button class="icon-btn edit" onclick="editEntry(\'vinted\',' + x.i + ')" title="Bewerk">&#9998;</button>' +
+      '<button class="icon-btn del" onclick="deleteEntry(\'vinted\',' + x.i + ')" title="Verwijder">&#10005;</button></div>' +
+      '</div>';
+  }).join('');
+}
+
+function openModal(){
+  editMode = null;
+  document.getElementById('modal-title').textContent = 'Nieuwe invoer';
+  document.getElementById('m-type').disabled = false;
+  document.getElementById('m-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('m-name').value='';
+  document.getElementById('m-size').value='';
+  document.getElementById('m-price').value='';
+  document.getElementById('m-qty').value = 1;
+  document.getElementById('m-cat').value = 'Schoenen';
+  document.getElementById('m-type').value = 'inkoop';
+  onTypeChange();
+  document.getElementById('modal').classList.add('show');
+}
+
+function editEntry(type, idx) {
+  editMode = {type, index:idx};
+  document.getElementById('modal-title').textContent = 'Bewerk invoer';
+  document.getElementById('m-type').value = type;
+  document.getElementById('m-type').disabled = true;
+  if (type === 'inkoop') {
+    const p = DATA.purchases[idx];
+    document.getElementById('m-date').value = p.date;
+    document.getElementById('m-cat').value = p.cat;
+    document.getElementById('m-name').value = p.name || '';
+    document.getElementById('m-size').value = p.size || '';
+    document.getElementById('m-qty').value = p.qty || 1;
+    document.getElementById('m-price').value = p.price;
+  } else {
+    const v = DATA.sales[idx];
+    document.getElementById('m-date').value = v.date;
+    document.getElementById('m-cat').value = v.cat;
+    document.getElementById('m-name').value = v.name || '';
+    document.getElementById('m-size').value = '';
+    document.getElementById('m-qty').value = 1;
+    document.getElementById('m-price').value = v.price;
+  }
+  onTypeChange();
+  document.getElementById('modal').classList.add('show');
+}
+
+function deleteEntry(type, idx) {
+  const item = type === 'inkoop' ? DATA.purchases[idx] : DATA.sales[idx];
+  const label = item.name || '(geen naam)';
+  document.getElementById('c-title').textContent = type === 'inkoop' ? 'Inkoop verwijderen?' : 'Verkoop verwijderen?';
+  document.getElementById('c-msg').textContent = label + ' \u2014 ' + item.date + '. Deze actie kan niet ongedaan worden.';
+  confirmAction = () => {
+    if (type === 'inkoop') DATA.purchases.splice(idx, 1);
+    else DATA.sales.splice(idx, 1);
+    save(); renderAll(); toast('\u2713 Verwijderd');
+  };
+  document.getElementById('confirm').classList.add('show');
+}
+
+function closeConfirm(){ document.getElementById('confirm').classList.remove('show'); confirmAction = null; }
+function doConfirm(){ if (confirmAction) confirmAction(); closeConfirm(); }
+
+function closeModal(){ document.getElementById('modal').classList.remove('show'); editMode = null; }
+
+function onTypeChange(){
+  const t = document.getElementById('m-type').value;
+  document.getElementById('m-price-label').textContent = t==='inkoop' ? 'Prijs per stuk (CNY)' : 'Prijs (EUR)';
+  document.getElementById('qty-wrap').style.display = t==='inkoop' ? '' : 'none';
+  document.getElementById('size-qty-row').style.display = t==='inkoop' ? '' : 'none';
+}
+
+function saveEntry(){
+  const t = document.getElementById('m-type').value;
+  const date = document.getElementById('m-date').value;
+  const cat = document.getElementById('m-cat').value;
+  const name = document.getElementById('m-name').value.trim();
+  const price = parseFloat(document.getElementById('m-price').value);
+  if (!date || isNaN(price)) { toast('Datum en prijs verplicht'); return; }
+
+  if (t==='inkoop') {
+    const entry = {
+      date, cat, name,
+      supplier: 'Basetao',
+      size: document.getElementById('m-size').value.trim(),
+      qty: parseInt(document.getElementById('m-qty').value) || 1,
+      price,
+      ship: 0
+    };
+    if (editMode && editMode.type === 'inkoop') DATA.purchases[editMode.index] = entry;
+    else DATA.purchases.push(entry);
+  } else {
+    const entry = { date, cat, name, price };
+    if (editMode && editMode.type === 'vinted') DATA.sales[editMode.index] = entry;
+    else DATA.sales.push(entry);
+  }
+  save(); closeModal(); renderAll();
+  toast(editMode ? '\u2713 Bijgewerkt' : '\u2713 Opgeslagen');
+}
+
+function saveRate(){
+  const r = parseFloat(document.getElementById('rate-input').value);
+  if (isNaN(r)||r<=0) { toast('Ongeldige koers'); return; }
+  DATA.rate = r; save(); renderAll(); toast('\u2713 Koers opgeslagen');
+}
+function saveHistShip(){
+  const r = parseFloat(document.getElementById('hist-ship-input').value);
+  if (isNaN(r)||r<0) { toast('Ongeldig bedrag'); return; }
+  DATA.histShipCny = r; save(); renderAll(); toast('\u2713 Verzendkosten opgeslagen');
+}
+function addShipCost(){
+  const addEl = document.getElementById('add-ship-input');
+  const add = parseFloat(addEl.value);
+  if (isNaN(add)||add<=0) { toast('Ongeldig bedrag'); return; }
+  DATA.histShipCny = (DATA.histShipCny||0) + add;
+  save();
+  document.getElementById('hist-ship-input').value = DATA.histShipCny;
+  addEl.value = '';
   renderAll();
-  toast('🗑 Verwijderd — alles bijgewerkt');
+  toast('\u2713 \u00a5' + add.toFixed(2) + ' toegevoegd (totaal \u00a5' + DATA.histShipCny.toFixed(2) + ')');
 }
-document.getElementById('modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
-
-// ═══════════════════ RENDER KPIs ═══════════════════
-function renderKPIs() {
-  const totCNY = D.inkoop.reduce((s,r)=>s+r[5]*r[6],0);
-  const totEUR = totCNY * D.rate;
-  const totV   = D.vinted.reduce((s,r)=>s+r[3],0);
-  const winst  = totV - totEUR;
-  const marge  = totEUR>0 ? (winst/totEUR*100) : 0;
-  const stuks  = D.inkoop.reduce((s,r)=>s+r[5],0);
-  const wc     = winst>=0 ? 'var(--grn)' : 'var(--red)';
-  document.getElementById('kpi-grid').innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-label">Totale Inkoop</div>
-      <div class="kpi-value" style="font-size:17px">${cny(totCNY)}</div>
-      <div class="kpi-sub">${eur(totEUR)}</div>
-    </div>
-    <div class="kpi-card teal">
-      <div class="kpi-label">Vinted Opbrengst</div>
-      <div class="kpi-value">${eur(totV)}</div>
-      <div class="kpi-sub">${D.vinted.length} verkopen</div>
-    </div>
-    <div class="kpi-card grn">
-      <div class="kpi-label">Bruto Winst</div>
-      <div class="kpi-value" style="color:${wc}">${eur(winst)}</div>
-      <div class="kpi-sub">Marge: ${marge.toFixed(1)}%</div>
-    </div>
-    <div class="kpi-card org">
-      <div class="kpi-label">Stuks Ingekocht</div>
-      <div class="kpi-value">${stuks}</div>
-      <div class="kpi-sub">${D.inkoop.length} regels</div>
-    </div>`;
+function clearAll(){
+  if (!confirm('Wis ALLE data?')) return;
+  localStorage.removeItem(KEY); DATA = load();
+  DATA.purchases.forEach(p => { if (p.ship === undefined) p.ship = 0; });
+  if (DATA.histShipCny === undefined) DATA.histShipCny = DEFAULT_HIST_SHIP_CNY;
+  document.getElementById('rate-input').value = DATA.rate;
+  document.getElementById('hist-ship-input').value = DATA.histShipCny;
+  renderAll(); toast('Data gereset');
 }
 
-// ═══════════════════ RENDER CHARTS ═══════════════════
-let barC, pieC;
-function renderCharts() {
-  const m = monthlyData();
-  const keys = Object.keys(m).sort();
-  const labels = keys.map(k => k.slice(5)+'/'+k.slice(2,4));
-  const bVals = keys.map(k => +m[k].b.toFixed(2));
-  const vVals = keys.map(k => +m[k].v.toFixed(2));
-  if (barC) barC.destroy();
-  barC = new Chart(document.getElementById('barChart'), {
-    type:'bar', data:{ labels,
-      datasets:[
-        {label:'Inkoop €',data:bVals,backgroundColor:'#4F8EF7',borderRadius:4},
-        {label:'Vinted €',data:vVals,backgroundColor:'#09B1AA',borderRadius:4}
-      ]},
-    options:{responsive:true,plugins:{legend:{position:'top'}},
-      scales:{y:{ticks:{callback:v=>'€'+v}}}}
+// ═══ EXPORTS ═══
+function download(filename, content, mime) {
+  const b = new Blob([content], {type: mime});
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href = u; a.download = filename; a.click();
+  URL.revokeObjectURL(u);
+}
+
+function csvEscape(s) {
+  if (s === null || s === undefined) return '';
+  const str = String(s);
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function exportCSV() {
+  const rows = [];
+  rows.push(['Type','Datum','Categorie','Leverancier','Product','Maat','Aantal','Prijs_CNY','Verzend_CNY','Totaal_CNY','Totaal_EUR','Prijs_EUR'].map(csvEscape).join(','));
+  DATA.purchases.forEach(p => {
+    const qty = p.qty||1;
+    const totalCny = p.price*qty + (p.ship||0);
+    const totalEur = toEur(totalCny);
+    rows.push(['Inkoop', p.date, p.cat, p.supplier||'Basetao', p.name||'', p.size||'', qty, p.price.toFixed(2), (p.ship||0).toFixed(2), totalCny.toFixed(2), totalEur.toFixed(2), ''].map(csvEscape).join(','));
   });
-  const cats={};
-  D.vinted.forEach(r=>{cats[r[1]]=(cats[r[1]]||0)+r[3];});
-  const cl=Object.keys(cats).sort((a,b)=>cats[b]-cats[a]), cv=cl.map(c=>+cats[c].toFixed(2));
-  if (pieC) pieC.destroy();
-  pieC = new Chart(document.getElementById('pieChart'), {
-    type:'doughnut', data:{labels:cl,
-      datasets:[{data:cv,backgroundColor:['#4F8EF7','#7C5CFC','#3EC9CF','#FF7B54','#47C98F','#F76B8A'],borderWidth:2}]},
-    options:{responsive:true,plugins:{legend:{position:'bottom'}}}
+  DATA.sales.forEach(v => {
+    rows.push(['Verkoop', v.date, v.cat, 'Vinted', v.name||'', '', 1, '', '', '', '', v.price.toFixed(2)].map(csvEscape).join(','));
   });
+  const csv = rows.join('\n');
+  download('resell_export_'+new Date().toISOString().slice(0,10)+'.csv', '\ufeff'+csv, 'text/csv;charset=utf-8');
+  toast('\u2713 CSV gedownload');
 }
 
-// ═══════════════════ RENDER MAANDEN ═══════════════════
-function renderMaanden() {
-  const m = monthlyData();
-  const keys = Object.keys(m).sort();
-  let tb=0,tv=0,html='';
-  keys.forEach((k,i)=>{
-    const b=m[k].b,v=m[k].v,w=v-b,mg=b>0?(w/b*100).toFixed(1):'-';
-    tb+=b; tv+=v;
-    const wc=w>=0?'var(--grn)':'var(--red)';
-    html+=`<div class="month-row ${i%2?'alt':''}">
-      <div class="m-maand">${k.slice(5)+'/'+k.slice(2,4)}</div>
-      <div class="m-buy">${eur(b)}</div>
-      <div class="m-vint">${eur(v)}</div>
-      <div class="m-winst" style="color:${wc}">${eur(w)}</div>
-      <div class="m-pct">${mg}%</div>
-    </div>`;
-  });
-  const tw=tv-tb,wc2=tw>=0?'#47C98F':'#ff6b6b';
-  html+=`<div class="month-row tot">
-    <div class="m-maand">TOT</div>
-    <div class="m-buy">${eur(tb)}</div>
-    <div class="m-vint">${eur(tv)}</div>
-    <div class="m-winst" style="color:${wc2}">${eur(tw)}</div>
-    <div class="m-pct">${tb>0?(tw/tb*100).toFixed(1):0}%</div>
-  </div>`;
-  document.getElementById('maand-rows').innerHTML = html;
+function exportHTML() {
+  const totalRev = DATA.sales.reduce((s,v)=>s+v.price, 0);
+  const totalCost = totalUnitsCost();
+  const shipCost = totalShipCost();
+  const profit = totalRev - totalCost;
+  const date = new Date().toLocaleDateString('nl-NL', {day:'numeric', month:'long', year:'numeric'});
+
+  const purRows = [...DATA.purchases].sort((a,b)=>b.date.localeCompare(a.date)).map(p => {
+    const qty = p.qty||1;
+    const totalCny = p.price*qty + (p.ship||0);
+    return '<tr><td>'+p.date+'</td><td>'+p.cat+'</td><td>'+(p.name||'')+'</td><td>'+(p.size||'')+'</td><td style="text-align:right">'+qty+'</td><td style="text-align:right">\u00a5'+p.price.toFixed(2)+'</td><td style="text-align:right">\u00a5'+(p.ship||0).toFixed(2)+'</td><td style="text-align:right"><b>'+fmtD(toEur(totalCny))+'</b></td></tr>';
+  }).join('');
+  const salRows = [...DATA.sales].sort((a,b)=>b.date.localeCompare(a.date)).map(v =>
+    '<tr><td>'+v.date+'</td><td>'+v.cat+'</td><td>'+(v.name||'')+'</td><td style="text-align:right"><b>'+fmtD(v.price)+'</b></td></tr>'
+  ).join('');
+
+  const html = '<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>Resell Rapport '+date+'</title>' +
+    '<style>body{font-family:-apple-system,"Helvetica Neue",sans-serif;background:#F5F6FA;color:#1E2A4A;padding:20px;max-width:1000px;margin:0 auto;}' +
+    'h1{font-size:22px;margin-bottom:4px;}.sub{color:#8A94B0;font-size:12px;margin-bottom:20px;}' +
+    '.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px;}' +
+    '.kpi{background:#fff;border-radius:10px;padding:12px;border-top:3px solid #4F8EF7;}' +
+    '.kpi.c{border-top-color:#FF7B54;}.kpi.p{border-top-color:#47C98F;}.kpi.s{border-top-color:#F5B942;}' +
+    '.kpi-l{font-size:9px;text-transform:uppercase;color:#8A94B0;letter-spacing:.5px;margin-bottom:4px;font-weight:700;}' +
+    '.kpi-v{font-size:20px;font-weight:800;}' +
+    'h2{font-size:15px;margin:24px 0 10px;border-bottom:2px solid #E0E4F0;padding-bottom:6px;}' +
+    'table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;font-size:11px;}' +
+    'th{background:#F0F2F8;text-align:left;padding:8px 10px;font-size:9px;text-transform:uppercase;color:#8A94B0;letter-spacing:.5px;}' +
+    'td{padding:7px 10px;border-top:1px solid #F0F2F8;}tr:hover td{background:#FAFBFD;}' +
+    '.pos{color:#47C98F;}.neg{color:#dc2626;}</style></head><body>' +
+    '<h1>Resell Dashboard Rapport</h1><div class="sub">Basetao \u2192 Vinted \u00b7 ' + date + ' \u00b7 wisselkoers ' + DATA.rate + ' EUR/CNY</div>' +
+    '<div class="kpis">' +
+    '<div class="kpi"><div class="kpi-l">Omzet</div><div class="kpi-v pos">' + fmt(totalRev) + '</div></div>' +
+    '<div class="kpi c"><div class="kpi-l">Kosten</div><div class="kpi-v">' + fmt(totalCost) + '</div></div>' +
+    '<div class="kpi p"><div class="kpi-l">Winst</div><div class="kpi-v ' + (profit>=0?'pos':'neg') + '">' + fmt(profit) + '</div></div>' +
+    '<div class="kpi s"><div class="kpi-l">Verzend Basetao</div><div class="kpi-v">' + fmt(shipCost) + '</div></div>' +
+    '</div>' +
+    '<h2>Inkoop (' + DATA.purchases.length + ' orders, ' + totalUnits() + ' stuks)</h2>' +
+    '<table><tr><th>Datum</th><th>Cat</th><th>Product</th><th>Maat</th><th>Aantal</th><th>Prijs/stuk</th><th>Verzend</th><th>Totaal EUR</th></tr>' + purRows + '</table>' +
+    '<h2>Vinted verkopen (' + DATA.sales.length + ')</h2>' +
+    '<table><tr><th>Datum</th><th>Cat</th><th>Product</th><th>Prijs</th></tr>' + salRows + '</table>' +
+    '</body></html>';
+
+  download('resell_rapport_'+new Date().toISOString().slice(0,10)+'.html', html, 'text/html;charset=utf-8');
+  toast('\u2713 HTML rapport gedownload');
 }
 
-// ═══════════════════ RENDER INKOOP ═══════════════════
-function renderInkoop() {
-  const q = (document.getElementById('inkoop-search')?.value||'').toLowerCase();
-  // Sort newest first, keep original index for deletion
-  const indexed = D.inkoop.map((r,i)=>({r,i})).sort((a,b)=>b.r[0].localeCompare(a.r[0]));
-  const filtered = q ? indexed.filter(({r})=>r[3].toLowerCase().includes(q)||r[1].toLowerCase().includes(q)) : indexed;
-  document.getElementById('inkoop-count').textContent = `${filtered.length} regels · ${eur(filtered.reduce((s,{r})=>s+r[5]*r[6]*D.rate,0))}`;
-  let html='';
-  filtered.forEach(({r,i},fi)=>{
-    const e=r[5]*r[6]*D.rate;
-    html+=`<div class="list-item ${fi%2?'alt':''}">
-      <div class="list-item-body">
-        <div class="li-top">
-          <span class="li-date">${r[0].slice(5)}</span>
-          ${badge(r[1])}
-          <span class="li-art">${r[3]}</span>
-        </div>
-        <div class="li-bottom">
-          <span class="li-maat">${r[4]}</span>
-          ${r[5]>1?`<span class="li-qty">${r[5]}×</span>`:''}
-          <span style="font-size:10px;color:var(--greyt)">¥${r[6]}/stk</span>
-        </div>
-      </div>
-      <span class="li-amt blue">${eur(e)}</span>
-      <button class="del-btn" onclick="askDelete('inkoop',${i},'${r[3].replace(/'/g,"\\'")} · ${r[0]}')">×</button>
-    </div>`;
-  });
-  document.getElementById('inkoop-list').innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--greyt)">Geen resultaten</div>';
+function exportJSON(){
+  download('resell_backup_'+new Date().toISOString().slice(0,10)+'.json', JSON.stringify(DATA,null,2), 'application/json');
+  toast('\u2713 Backup gedownload');
+}
+function importJSON(e){
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try { const d = JSON.parse(ev.target.result);
+      if (d.purchases && d.sales) {
+        d.purchases.forEach(p => { if (p.ship === undefined) p.ship = 0; });
+        if (d.histShipCny === undefined) d.histShipCny = 0;
+        DATA=d; save();
+        document.getElementById('rate-input').value = DATA.rate;
+        document.getElementById('hist-ship-input').value = DATA.histShipCny;
+        renderAll(); toast('\u2713 Ge\u00efmporteerd');
+      } else toast('Ongeldig bestand');
+    } catch { toast('Import fout'); }
+  };
+  r.readAsText(f);
 }
 
-// ═══════════════════ RENDER VINTED ═══════════════════
-function renderVinted() {
-  const q = (document.getElementById('vinted-search')?.value||'').toLowerCase();
-  const indexed = D.vinted.map((r,i)=>({r,i})).sort((a,b)=>b.r[0].localeCompare(a.r[0]));
-  const filtered = q ? indexed.filter(({r})=>(r[2]||'').toLowerCase().includes(q)||r[1].toLowerCase().includes(q)) : indexed;
-  document.getElementById('vinted-count').textContent = `${filtered.length} verkopen · ${eur(filtered.reduce((s,{r})=>s+r[3],0))}`;
-  let html='';
-  filtered.forEach(({r,i},fi)=>{
-    html+=`<div class="list-item ${fi%2?'alt':''}">
-      <div class="list-item-body">
-        <div class="li-top">
-          <span class="li-date">${r[0].slice(5)}</span>
-          ${badge(r[1])}
-          <span class="li-art">${r[2]||'('+r[1]+')'}</span>
-        </div>
-      </div>
-      <span class="li-amt teal">${eur(r[3])}</span>
-      <button class="del-btn" onclick="askDelete('vinted',${i},'${(r[2]||r[1]).replace(/'/g,"\\'")} · ${r[0]}')">×</button>
-    </div>`;
-  });
-  document.getElementById('vinted-list').innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--greyt)">Geen resultaten</div>';
-}
-
-// ═══════════════════ ADD ═══════════════════
-function addVinted() {
-  const d=document.getElementById('v-datum').value;
-  const cat=document.getElementById('v-cat').value;
-  const e=parseFloat(document.getElementById('v-eur').value);
-  const art=document.getElementById('v-art').value.trim();
-  if(!d||isNaN(e)||e<=0){toast('Vul datum en bedrag in ⚠️');return;}
-  D.vinted.push([d,cat,art,e]);
-  saveData(); renderAll();
-  document.getElementById('v-eur').value='';
-  document.getElementById('v-art').value='';
-  toast('✓ Verkoop toegevoegd & winst bijgewerkt!');
-}
-
-function addInkoop() {
-  const d=document.getElementById('i-datum').value;
-  const cat=document.getElementById('i-cat').value;
-  const plat=document.getElementById('i-plat').value;
-  const art=document.getElementById('i-art').value.trim();
-  const maat=document.getElementById('i-maat').value.trim();
-  const qty=parseInt(document.getElementById('i-qty').value)||1;
-  const prijs=parseFloat(document.getElementById('i-prijs').value);
-  if(!d||isNaN(prijs)||prijs<=0){toast('Vul datum en prijs in ⚠️');return;}
-  D.inkoop.push([d,cat,plat,art,maat,qty,prijs]);
-  saveData(); renderAll();
-  document.getElementById('i-art').value='';
-  document.getElementById('i-maat').value='';
-  document.getElementById('i-qty').value='1';
-  document.getElementById('i-prijs').value='';
-  toast('✓ Inkoop toegevoegd & dashboard bijgewerkt!');
-}
-
-function saveRate() {
-  const r=parseFloat(document.getElementById('eur-rate').value);
-  if(isNaN(r)||r<=0){toast('Ongeldige koers ⚠️');return;}
-  D.rate=r; saveData(); renderAll();
-  toast('✓ Wisselkoers opgeslagen!');
-}
-
-function confirmReset() {
-  if(!confirm('Weet je zeker dat je ALLES wilt resetten? Dit verwijdert ook je eigen toevoegingen.')) return;
-  localStorage.removeItem('rdb_rate');
-  localStorage.removeItem('rdb_inkoop');
-  localStorage.removeItem('rdb_vinted');
-  D=loadData(); renderAll();
-  toast('Data teruggezet naar standaard');
-}
-
-// ═══════════════════ TOAST ═══════════════════
-function toast(msg) {
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2800);
-}
-
-// ═══════════════════ NAV ═══════════════════
-function showPage(name, el) {
+function show(name, el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
-  if(el) el.classList.add('active');
-  if(name==='overview'){renderKPIs();renderCharts();}
-  if(name==='maanden') renderMaanden();
-  if(name==='inkoop')  renderInkoop();
-  if(name==='vinted')  renderVinted();
+  el.classList.add('active');
+  window.scrollTo(0,0);
+  if (name==='overview') renderOverview();
 }
-
-function renderAll() {
-  renderKPIs(); renderCharts(); renderMaanden(); renderInkoop(); renderVinted();
+function toast(m){
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('show');
+  clearTimeout(window._t); window._t = setTimeout(()=>t.classList.remove('show'), 2000);
 }
+function renderAll(){ renderOverview(); renderMonths(); renderPur(); renderSal(); }
 
-// ═══════════════════ INIT ═══════════════════
-const today=new Date().toISOString().slice(0,10);
-document.getElementById('v-datum').value=today;
-document.getElementById('i-datum').value=today;
-document.getElementById('eur-rate').value=D.rate;
+document.getElementById('today').textContent = new Date().toLocaleDateString('nl-NL', {day:'numeric', month:'short', year:'numeric'});
+document.getElementById('rate-input').value = DATA.rate;
+document.getElementById('hist-ship-input').value = DATA.histShipCny || 0;
 renderAll();
 </script>
 </body>
